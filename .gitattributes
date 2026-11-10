@@ -1,0 +1,3 @@
+# Scripts y SQL siempre con finales de línea Unix (bash y psql fallan con CRLF)
+*.sh  text eol=lf
+*.sql text eol=lf
