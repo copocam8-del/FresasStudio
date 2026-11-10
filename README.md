@@ -104,6 +104,17 @@ Corre todo dentro de una transacción que se descarta y no toca ninguna base exi
 - **Backups y monitoreo (ARC-09):** se configuran en Supabase (PITR) y Vercel.
 - **Módulos y límites por plan (SAAS-04):** el esquema ya deja lugar para `tenant_entitlements`.
 
+## Pendientes técnicos
+
+- **Vulnerabilidad de `minimatch` en dependencias de desarrollo:** `npm audit` reporta
+  `minimatch` < 11.0.1 ([GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249)),
+  que entra por `typescript-eslint` (vía `eslint-config-next`) y por `ts-morph` (vía la CLI de
+  `shadcn`). Hoy sus últimas versiones todavía piden `minimatch` 10.x, así que no hay arreglo
+  posible sin forzar versiones. No afecta a producción (`npm audit --omit=dev` da 0).
+  Cuando `typescript-eslint` y `ts-morph` acepten `minimatch` 11, correr `npm update`,
+  confirmar con `npm audit` y verificar que `npm run lint` y `npm run build` sigan pasando.
+  No usar `npm audit fix --force`: propone bajar `shadcn` a la 1.0.0.
+
 ## Decisión que conviene definir antes del sprint 2
 
 **¿La cuenta de una clienta es una sola para todos los estudios, o cada estudio tiene su
