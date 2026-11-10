@@ -25,12 +25,15 @@ supabase/
     20261110000500_rpc.sql             funciones de servidor (página pública, invitar, aceptar, Cleo Admin)
     20261110000600_function_search_path.sql  search_path = '' en las funciones que no lo fijaban
     20261110000700_cleo_rename.sql     renombre a Cleo: slugs reservados, "fresas" liberado, mensajes
+    20261110000800_tenant_domains.sql  dominios propios (preparación): tabla, RLS, resolución y RPC de Cleo Admin
   seed.sql                             SOLO desarrollo: Fresas Studio + Estudio Prueba
 db/
   local/00_supabase_shim.sql           SOLO local: imita auth.uid() y roles de Supabase
   tests/lib/setup.sql, finish.sql      framework común (transacción, asserts, atajos de sesión)
   tests/01_isolation_and_permissions.sql
   tests/02_cleo_rename.sql
+  tests/03_dev_seed.sql
+  tests/04_tenant_domains.sql
 scripts/test-db.sh                     levanta Postgres temporal, migra, siembra y testea (Linux y Windows)
 ```
 
