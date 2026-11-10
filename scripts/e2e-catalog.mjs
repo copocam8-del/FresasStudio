@@ -129,4 +129,49 @@ const cat2 = (await (await supabaseAs()).rpc("get_public_catalog", { p_slug: "fr
 ok(!cat2.professionals.some((p) => p.id === newId) && cat2.services.find((s) => s.id === semi)?.price_minor === 1300000,
    "archivada: sale del sitio y el semipermanente vuelve a «desde $ 13.000»");
 
+// ---------------------------------------------------------------------
+// Horario del estudio y bloqueos generales
+// ---------------------------------------------------------------------
+r = await req(F, "/admin/horarios", { cookies: owner });
+ok(r.status === 200 && r.html.includes("Guardar horario") && r.html.includes("Sábado"), "horarios: la dueña puede editar el horario del estudio");
+r = await req(F, "/admin/horarios", { cookies: pro });
+ok(r.status === 200 && r.html.includes("Solo lectura") && !r.html.includes("Guardar horario"), "horarios: la profesional solo lo ve");
+// Envío forzado: el formulario de la dueña, mandado con la sesión de la profesional.
+{
+  const { formFields } = await import("./e2e-lib.mjs");
+  const forced = formFields((await req(F, "/admin/horarios", { cookies: owner })).html, "Guardar horario");
+  forced.set("ranges", "[]");
+  r = await req(F, "/admin/horarios", { method: "POST", body: forced, cookies: pro });
+}
+ok(r.html.includes("No tenés permiso"), "horarios: la profesional no puede guardarlo aunque fuerce el envío");
+
+const { data: studioRows } = await sb.from("working_hours").select("weekday, start_minute, end_minute").is("professional_id", null);
+const original = studioRows.map((h) => ({ weekday: h.weekday, start: h.start_minute, end: h.end_minute }));
+r = await submit(F, "/admin/horarios", "Guardar horario",
+  { ranges: JSON.stringify([...original.filter((h) => h.weekday !== 6), { weekday: 6, start: 540, end: 600 }, { weekday: 6, start: 570, end: 660 }]) }, owner);
+ok(r.html.includes("se superponen"), "horarios: franjas superpuestas se rechazan con un mensaje claro");
+r = await submit(F, "/admin/horarios", "Guardar horario",
+  { ranges: JSON.stringify([...original.filter((h) => h.weekday !== 6), { weekday: 6, start: 600, end: 840 }]) }, owner);
+ok(r.html.includes("Guardamos el horario"), "horarios: cambiar el sábado a 10–14 se guarda");
+r = await submit(F, "/admin/horarios", "Guardar horario", { ranges: JSON.stringify(original) }, owner);
+ok(r.html.includes("Guardamos el horario"), "horarios: se restaura el horario original");
+
+r = await req(F, "/admin/bloqueos", { cookies: owner });
+ok(r.status === 200 && r.html.includes("Inmaculada Concepción") && r.html.includes("Todo el estudio") && r.html.includes("Caro"),
+   "bloqueos: lista los del estudio y de cada profesional");
+r = await submit(F, "/admin/bloqueos", "Agregar bloqueo",
+  { kind: "block", professional_id: "", from_date: "2026-12-30", to_date: "2026-12-30", from_time: "15:00", to_time: "14:00", note: `E2E ${stamp}` }, owner);
+ok(r.html.includes("terminar después de empezar"), "bloqueos: un horario al revés se rechaza");
+r = await submit(F, "/admin/bloqueos", "Agregar bloqueo",
+  { kind: "block", professional_id: "", from_date: "2026-12-30", to_date: "2026-12-30", from_time: "15:00", to_time: "16:30", note: `E2E ${stamp}` }, owner);
+ok(r.html.includes("Bloqueo guardado"), "bloqueos: el estudio cierra de 15 a 16:30 un día");
+const blk = (await sb.from("schedule_blocks").select("id, period").eq("note", `E2E ${stamp}`).single()).data;
+ok(blk?.period?.startsWith('["2026-12-30 18:00:00+00"'), "bloqueos: guardado en hora de Buenos Aires (15:00 = 18:00 UTC)");
+r = await req(F, "/admin/bloqueos", { cookies: owner });
+const delFd = (await import("./e2e-lib.mjs")).formFields(r.html, blk.id);
+r = await req(F, "/admin/bloqueos", { method: "POST", body: delFd, cookies: owner });
+ok(!(await sb.from("schedule_blocks").select("id").eq("id", blk.id)).data?.length, "bloqueos: «Quitar» lo borra");
+r = await req(F, "/admin/bloqueos", { cookies: pro });
+ok(r.status === 200 && !r.html.includes("Nuevo bloqueo"), "bloqueos: la profesional los ve sin poder cargar (N6)");
+
 done();

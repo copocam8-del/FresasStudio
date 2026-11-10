@@ -21,6 +21,8 @@ export default async function PanelLayout({ children, params }: LayoutProps<"/si
     { href: "/admin", label: "Inicio", show: true },
     { href: "/admin/servicios", label: "Servicios", show: true },
     { href: "/admin/profesionales", label: "Profesionales", show: true },
+    { href: "/admin/horarios", label: "Horarios", show: true },
+    { href: "/admin/bloqueos", label: "Bloqueos", show: true },
     { href: "/admin/equipo", label: "Equipo", show: can(ctx, "team.read") },
     { href: "/admin/marca", label: "Marca", show: can(ctx, "settings.manage") },
   ].filter((l) => l.show);
