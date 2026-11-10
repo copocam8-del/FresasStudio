@@ -1,7 +1,7 @@
 // Pruebas de punta a punta del catálogo, profesionales, horarios y bloqueos (Sprint 3).
 // Requiere la app en localhost:3000 (npm run dev o next start) apuntando al Supabase de
 // DESARROLLO con el seed. Uso: node scripts/e2e-catalog.mjs (limpia lo que crea).
-import { done, F, login, ok, req, submit, supabaseAs } from "./e2e-lib.mjs";
+import { done, F, FRESAS_ID, login, ok, req, submit, supabaseAs } from "./e2e-lib.mjs";
 
 const owner = await login(F, "duena@fresasstudio.test");
 const pro = await login(F, "profesional@fresasstudio.test");
@@ -189,5 +189,35 @@ ok(!site.includes("Diseño con henna"), "sitio: el servicio «no visible en el s
 ok(!/Cleo/.test(site) && !/Reservar/.test(site), "sitio: sin «Cleo» y sin botón «Reservar» que todavía no funciona");
 r = await req("estudio-prueba.localhost:3000", "/");
 ok(r.status === 200 && !r.html.includes(">Servicios<") && !r.html.includes("Esmaltado"), "Estudio Prueba: no muestra nada del catálogo de Fresas");
+
+// ---------------------------------------------------------------------
+// Fotos (bucket "catalog", Storage real)
+// ---------------------------------------------------------------------
+{
+  const png = { bytes: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64"), type: "image/png", name: "foto.png" };
+  const svg = { bytes: new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'), type: "image/png", name: "foto.png" };
+  const photoName = `Prueba E2E foto ${stamp}`;
+  const fields = { ...base, name: photoName, deposit_mode: "studio", deposit_percent: "" };
+
+  r = await submit(F, "/admin/servicios/nuevo", "Crear servicio", fields, owner, { photo: svg });
+  ok(r.html.includes("PNG, JPG o WebP"), "foto: un SVG disfrazado de .png se rechaza (se miran los bytes)");
+  r = await submit(F, "/admin/servicios/nuevo", "Crear servicio", fields, owner, { photo: png });
+  ok(r.status === 303, "foto: el servicio se crea con su foto");
+  const svc = (await sb.from("services").select("id, photo_path").eq("name", photoName).single()).data;
+  ok(new RegExp(`^${FRESAS_ID}/services/[0-9a-f-]{36}\.png$`).test(svc?.photo_path ?? ""), "foto: guardada en la carpeta del estudio");
+
+  r = await req(F, "/");
+  const src = new RegExp(`<img src="([^"]+/storage/v1/object/public/catalog/${svc.photo_path})"`).exec(r.html)?.[1];
+  ok(Boolean(src), "sitio: el servicio muestra su foto");
+  const img = src ? await fetch(src) : null;
+  ok(img?.status === 200 && img.headers.get("content-type") === "image/png", "foto: Storage la sirve como image/png");
+
+  r = await submit(F, `/admin/servicios/${svc.id}`, "Guardar cambios", { ...fields, remove_photo: "on" }, owner);
+  const after = (await sb.from("services").select("photo_path").eq("id", svc.id).single()).data;
+  const left = await sb.storage.from("catalog").list(`${FRESAS_ID}/services`);
+  ok(r.status === 303 && after?.photo_path === null && !left.data?.some((o) => svc.photo_path.endsWith(o.name)),
+     "foto: «Quitar la foto» la borra del servicio y del bucket");
+  await submit(F, `/admin/servicios/${svc.id}`, "Archivar servicio", {}, owner);
+}
 
 done();
