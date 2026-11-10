@@ -71,19 +71,19 @@ Levanta un Postgres temporal propio en el puerto 54329 y lo borra al terminar.
 
 | Entorno | Proyecto | Migraciones | Seed |
 |---|---|---|---|
-| Desarrollo | `cleo-dev` (la CLI queda linkeada a este) | Sí | **Sí** |
-| Producción | `Fresas` (`bitfpryusoonfbgdtxkg`) | Sí, con ref explícito | **Nunca** |
+| Desarrollo | `bitfpryusoonfbgdtxkg` (en el panel figura como "Fresas"; la CLI está linkeada a este) | Sí | **Sí** |
+| Producción | **Pendiente:** se crea un proyecto nuevo antes del lanzamiento | Sí, con ref explícito | **Nunca** |
 
 Siempre con `npx supabase@3.1.0` (sin instalación global):
 
 ```bash
-# Desarrollo (proyecto linkeado): migraciones + seed
-npx supabase@3.1.0 db push --remote --dry-run --include-seed   # revisar primero
+# Desarrollo (proyecto linkeado): migraciones + seed (el seed es idempotente)
+npx supabase@3.1.0 db push --remote --include-seed --dry-run   # revisar primero
 npx supabase@3.1.0 db push --remote --include-seed
 
-# Producción: ref explícito y SIN --include-seed
-npx supabase@3.1.0 db push --remote=bitfpryusoonfbgdtxkg --dry-run
-npx supabase@3.1.0 db push --remote=bitfpryusoonfbgdtxkg
+# Producción (cuando exista): ref explícito y SIN --include-seed
+npx supabase@3.1.0 db push --remote=<ref-de-produccion> --dry-run
+npx supabase@3.1.0 db push --remote=<ref-de-produccion>
 ```
 
 - **No** aplicar `db/local/00_supabase_shim.sql`: Supabase ya trae eso.
@@ -151,6 +151,15 @@ npx supabase@3.1.0 db push --remote=bitfpryusoonfbgdtxkg
 - **Módulos y límites por plan (SAAS-04):** el esquema ya deja lugar para `tenant_entitlements`.
 
 ## Pendientes técnicos
+
+- **Proyecto Supabase de producción:** el proyecto actual (`bitfpryusoonfbgdtxkg`) es el de
+  desarrollo. Antes de lanzar hay que crear uno nuevo para producción, aplicarle las
+  migraciones **sin seed**, configurar Auth (URLs, Google, SMTP) y cargar sus variables en
+  Vercel. Conviene renombrar el actual a `cleo-dev` en el panel de Supabase.
+- **`cacheComponents` desactivado** (`next.config.ts`): el sitio y el panel de cada estudio
+  dependen del host, la base y la sesión, y así los 404 y las redirecciones de login son HTTP
+  reales. Next anuncia que en su próxima versión mayor la opción deja de existir: al
+  actualizar habrá que adaptar esas rutas (Suspense / `use cache: private`).
 
 - **Vulnerabilidad de `minimatch` en dependencias de desarrollo:** `npm audit` reporta
   `minimatch` < 11.0.1 ([GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249)),

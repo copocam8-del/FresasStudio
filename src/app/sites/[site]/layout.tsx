@@ -5,11 +5,6 @@ import { getStudio } from "@/lib/studio";
 // Sitio y panel de un estudio (marca blanca): todo lo que cuelga de acá muestra
 // solo el nombre y la marca del estudio, nunca "Cleo".
 
-// Depende del host y de la base (estudio, marca, sesión): se renderiza en el servidor
-// en cada request. Cachear los datos públicos por estudio (use cache + tags) queda
-// para cuando haya tráfico que lo justifique.
-export const instant = false;
-
 export async function generateMetadata({ params }: LayoutProps<"/sites/[site]">): Promise<Metadata> {
   const { site } = await params;
   const studio = await getStudio(site);

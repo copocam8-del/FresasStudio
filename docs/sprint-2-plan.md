@@ -20,7 +20,7 @@
 |---|---|
 | D1 | El panel de cada estudio vive en **`{slug}.cleo.com.ar/admin`**. Las clientas usan `{slug}.cleo.com.ar`. Quien trabaja en dos estudios inicia sesión en cada uno por separado (la sesión es por host). |
 | D2 | En toda la app se muestra el nombre del estudio. La pantalla de consentimiento de Google, única para todos, se llama **"Cleo Suite"**. |
-| D3 | Entorno de desarrollo: proyecto Supabase **`cleo-dev`** (migraciones + seed). El proyecto actual (`bitfpryusoonfbgdtxkg`) queda **solo para producción**: migraciones sí, seed **nunca**. |
+| D3 | ~~Proyecto `cleo-dev` aparte~~ → **Actualizado:** el proyecto actual (`bitfpryusoonfbgdtxkg`) es el de **desarrollo** (migraciones + seed). Producción será un proyecto nuevo, creado antes del lanzamiento: migraciones sí, seed **nunca**. |
 | D4 | La invitación genera un **link para copiar** (la dueña lo manda por WhatsApp). Email con Resend más adelante. |
 | D5 | Tema por defecto de Cleo: **beige, marrón, dorado y blanco**, elegante. Cada estudio cambia sus colores y su logo desde su panel (`tenant_settings.brand`) y se aplican en su sitio y su panel. El dorado es acento, nunca texto chico. |
 | D6 | Fresas Studio usa el slug **`fresas`** (se libera de la lista de reservados). |

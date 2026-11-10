@@ -24,4 +24,13 @@ select tests.ok(not exists (select 1 from auth.users where email like '%.test'
 select tests.ok((select count(*) = 7 from public.profiles p join auth.users u on u.id = p.id where u.email like '%.test'),
                 'seed: cada usuaria tiene su perfil (trigger handle_new_user)');
 
+-- Idempotencia: aplicar el seed otra vez no falla ni duplica filas
+select count(*) as n_users_before from auth.users \gset
+select count(*) as n_members_before from public.memberships \gset
+\ir ../../supabase/seed.sql
+select tests.ok((select count(*) from auth.users) = :n_users_before
+                and (select count(*) from public.memberships) = :n_members_before
+                and (select count(*) from auth.identities where provider = 'email') = :n_users_before,
+                'seed: se puede aplicar dos veces sin duplicar usuarias, identidades ni membresías');
+
 \ir lib/finish.sql

@@ -7,6 +7,7 @@
 -- un proyecto Supabase de desarrollo (cleo-dev): contraseña, email confirmado
 -- y su identidad "email". Contraseña de TODAS: CleoDev-2026
 -- Es pública a propósito: este seed jamás se aplica en producción.
+-- Es idempotente: se puede volver a aplicar sin duplicar filas.
 -- =====================================================================
 
 with seed_users (id, email) as (values
@@ -29,20 +30,24 @@ select id, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticat
        '{"provider": "email", "providers": ["email"]}', '{}',
        '', '', '', '',
        now(), now()
-from seed_users;
+from seed_users
+on conflict (id) do nothing;
 
 insert into auth.identities (id, user_id, provider_id, provider, identity_data, created_at, updated_at)
 select gen_random_uuid(), u.id, u.id::text, 'email',
        jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true),
        now(), now()
 from auth.users u
-where u.email like '%.test';
+where u.email like '%.test'
+on conflict (provider_id, provider) do nothing;
 
-insert into public.platform_admins (user_id) values ('00000000-0000-4000-a000-000000000001');
+insert into public.platform_admins (user_id) values ('00000000-0000-4000-a000-000000000001')
+on conflict (user_id) do nothing;
 
 insert into public.tenants (id, slug, name, status) values
   ('10000000-0000-4000-a000-000000000001', 'fresas',         'Fresas Studio',  'active'),
-  ('10000000-0000-4000-a000-000000000002', 'estudio-prueba', 'Estudio Prueba', 'trial');
+  ('10000000-0000-4000-a000-000000000002', 'estudio-prueba', 'Estudio Prueba', 'trial')
+on conflict (id) do nothing;
 
 update public.tenant_settings
    set description = 'Uñas, pestañas y cejas.',
@@ -57,4 +62,5 @@ from (values
   ('10000000-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000004', 'professional'),
   ('10000000-0000-4000-a000-000000000002', '00000000-0000-4000-a000-000000000005', 'owner')
 ) as v (tenant_id, user_id, role_key)
-join public.roles r on r.tenant_id is null and r.key = v.role_key;
+join public.roles r on r.tenant_id is null and r.key = v.role_key
+on conflict (tenant_id, user_id) do nothing;
