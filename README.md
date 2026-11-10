@@ -64,17 +64,30 @@ Levanta un Postgres temporal propio en el puerto 54329 y lo borra al terminar.
   configuración regional `C` con codificación UTF-8, porque `C.UTF-8` no existe en Windows.
   No interfiere con el servicio de PostgreSQL que deja instalado el instalador (puerto 5432).
 
-## Cómo aplicarlo en Supabase
+## Entornos de Supabase
 
-1. Crear el proyecto en Supabase (uno para staging y otro para producción).
-2. Con la CLI: `supabase link --project-ref <ref>` y después `supabase db push`.
-3. **No** aplicar `db/local/00_supabase_shim.sql`: Supabase ya trae eso.
-4. `seed.sql` es solo para desarrollo local (`supabase db reset`). Nunca en producción.
-5. Dar de alta a la superadministradora desde el SQL editor:
-   `insert into public.platform_admins (user_id) values ('<uuid de auth.users>');`
+| Entorno | Proyecto | Migraciones | Seed |
+|---|---|---|---|
+| Desarrollo | `cleo-dev` (la CLI queda linkeada a este) | Sí | **Sí** |
+| Producción | `Fresas` (`bitfpryusoonfbgdtxkg`) | Sí, con ref explícito | **Nunca** |
 
-> Las migraciones se probaron en PostgreSQL 16 puro con el shim. Todavía no se probaron
-> contra un proyecto Supabase real; es lo primero que hay que validar al crear el proyecto.
+Siempre con `npx supabase@3.1.0` (sin instalación global):
+
+```bash
+# Desarrollo (proyecto linkeado): migraciones + seed
+npx supabase@3.1.0 db push --remote --dry-run --include-seed   # revisar primero
+npx supabase@3.1.0 db push --remote --include-seed
+
+# Producción: ref explícito y SIN --include-seed
+npx supabase@3.1.0 db push --remote=bitfpryusoonfbgdtxkg --dry-run
+npx supabase@3.1.0 db push --remote=bitfpryusoonfbgdtxkg
+```
+
+- **No** aplicar `db/local/00_supabase_shim.sql`: Supabase ya trae eso.
+- El seed crea usuarias `.test` que pueden iniciar sesión con email y contraseña
+  (contraseña de desarrollo: `CleoDev-2026`). Es pública a propósito: nunca va a producción.
+- Superadministradora de producción, desde el SQL editor:
+  `insert into public.platform_admins (user_id) values ('<uuid de auth.users>');`
 
 ## Qué garantiza la base (y está testeado)
 

@@ -23,11 +23,39 @@ create schema if not exists auth;
 
 grant usage on schema public, extensions, auth to anon, authenticated, service_role;
 
--- Tabla mínima equivalente a auth.users de Supabase
+-- Tabla mínima equivalente a auth.users de Supabase.
+-- Incluye las columnas que usa el seed para crear usuarias que pueden iniciar
+-- sesión en un proyecto real (contraseña, confirmación de email, metadatos).
 create table if not exists auth.users (
-  id         uuid primary key default gen_random_uuid(),
-  email      text unique,
-  created_at timestamptz not null default now()
+  id                      uuid primary key default gen_random_uuid(),
+  instance_id             uuid,
+  aud                     text,
+  role                    text,
+  email                   text unique,
+  encrypted_password      text,
+  email_confirmed_at      timestamptz,
+  raw_app_meta_data       jsonb,
+  raw_user_meta_data      jsonb,
+  confirmation_token      text,
+  recovery_token          text,
+  email_change_token_new  text,
+  email_change            text,
+  last_sign_in_at         timestamptz,
+  created_at              timestamptz not null default now(),
+  updated_at              timestamptz not null default now()
+);
+
+-- Equivalente mínimo de auth.identities (una fila por proveedor de login)
+create table if not exists auth.identities (
+  id               uuid primary key default gen_random_uuid(),
+  user_id          uuid not null references auth.users (id) on delete cascade,
+  provider_id      text not null,
+  provider         text not null,
+  identity_data    jsonb not null,
+  last_sign_in_at  timestamptz,
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now(),
+  unique (provider_id, provider)
 );
 
 -- Igual que la función de Supabase: lee el "sub" del JWT de la request

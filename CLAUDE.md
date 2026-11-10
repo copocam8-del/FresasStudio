@@ -41,6 +41,9 @@ Cada migración que cree una tabla debe, en la misma migración:
 
 Además:
 - No modificar migraciones ya aplicadas: crear una nueva con timestamp posterior.
+- Entornos: las migraciones van primero a `cleo-dev` (proyecto linkeado) y a producción solo
+  con `--remote=<ref de producción>` explícito. `seed.sql` **nunca** se aplica en producción
+  (nada de `--include-seed` con el ref de producción).
 - La `service_role` key solo se usa en el servidor y nunca para saltear RLS en flujos de
   usuaria; jamás en código cliente ni en variables `NEXT_PUBLIC_*`.
 - Auditar los cambios relevantes en `audit_logs` (es de solo agregado).
