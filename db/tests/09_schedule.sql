@@ -3,6 +3,7 @@
 -- Fechas: lunes 16/11/2026 … domingo 22/11/2026. Fresas está en Buenos Aires (UTC-3).
 -- =====================================================================
 \ir lib/setup.sql
+\ir lib/clean_catalog.sql
 
 -- Franjas devueltas por working_intervals, en hora local del estudio: "16 09:00-13:00, …"
 :as_super

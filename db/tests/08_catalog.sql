@@ -2,6 +2,7 @@
 -- Tests del catálogo: categorías, servicios y profesionales (Sprint 3 · 1200)
 -- =====================================================================
 \ir lib/setup.sql
+\ir lib/clean_catalog.sql
 
 :as_super
 select id as mem_pro_a   from public.memberships where user_id = :'uid_pro_a' \gset

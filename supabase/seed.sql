@@ -64,3 +64,75 @@ from (values
 ) as v (tenant_id, user_id, role_key)
 join public.roles r on r.tenant_id is null and r.key = v.role_key
 on conflict (tenant_id, user_id) do nothing;
+
+-- =====================================================================
+-- Catálogo, profesionales y horarios de Fresas Studio (Sprint 3, solo desarrollo)
+-- =====================================================================
+insert into public.service_categories (id, tenant_id, name, position) values
+  ('30000000-0000-4000-a000-000000000001', '10000000-0000-4000-a000-000000000001', 'Uñas',     1),
+  ('30000000-0000-4000-a000-000000000002', '10000000-0000-4000-a000-000000000001', 'Pestañas', 2),
+  ('30000000-0000-4000-a000-000000000003', '10000000-0000-4000-a000-000000000001', 'Cejas',    3)
+on conflict (id) do nothing;
+
+insert into public.services (id, tenant_id, category_id, name, description, duration_minutes,
+                             buffer_after_minutes, price_minor, price_is_from, deposit_percent, show_online, position)
+values
+  ('31000000-0000-4000-a000-000000000001', '10000000-0000-4000-a000-000000000001', '30000000-0000-4000-a000-000000000001',
+   'Esmaltado semipermanente', 'Limado, cutículas y esmaltado que dura hasta 3 semanas.', 60, 10, 1500000, false, null, true, 1),
+  ('31000000-0000-4000-a000-000000000002', '10000000-0000-4000-a000-000000000001', '30000000-0000-4000-a000-000000000001',
+   'Kapping gel', 'Capa de gel sobre la uña natural para que crezca más fuerte.', 90, 10, 2200000, false, null, true, 2),
+  ('31000000-0000-4000-a000-000000000003', '10000000-0000-4000-a000-000000000001', '30000000-0000-4000-a000-000000000001',
+   'Uñas esculpidas', 'El precio final depende del largo y del diseño.', 120, 15, 3000000, true, null, true, 3),
+  ('31000000-0000-4000-a000-000000000004', '10000000-0000-4000-a000-000000000001', '30000000-0000-4000-a000-000000000002',
+   'Lifting de pestañas', 'Curvatura y tinte de tus pestañas naturales.', 60, 0, 2500000, false, 30, true, 1),
+  ('31000000-0000-4000-a000-000000000005', '10000000-0000-4000-a000-000000000001', '30000000-0000-4000-a000-000000000002',
+   'Extensiones pelo a pelo', null, 120, 10, 4000000, false, null, true, 2),
+  ('31000000-0000-4000-a000-000000000006', '10000000-0000-4000-a000-000000000001', '30000000-0000-4000-a000-000000000003',
+   'Perfilado de cejas', null, 30, 0, 900000, false, null, true, 1),
+  ('31000000-0000-4000-a000-000000000007', '10000000-0000-4000-a000-000000000001', '30000000-0000-4000-a000-000000000003',
+   'Diseño con henna', 'Todavía no se ofrece online.', 45, 0, 1300000, false, null, false, 2)
+on conflict (id) do nothing;
+
+-- Sofi usa el panel (cuenta profesional@fresasstudio.test); Caro no usa la app.
+insert into public.professionals (id, tenant_id, membership_id, display_name, bio, position)
+select '32000000-0000-4000-a000-000000000001', m.tenant_id, m.id, 'Sofi', 'Especialista en uñas.', 1
+from public.memberships m
+where m.tenant_id = '10000000-0000-4000-a000-000000000001' and m.user_id = '00000000-0000-4000-a000-000000000004'
+on conflict (id) do nothing;
+insert into public.professionals (id, tenant_id, display_name, bio, position) values
+  ('32000000-0000-4000-a000-000000000002', '10000000-0000-4000-a000-000000000001', 'Caro', 'Pestañas, cejas y uñas.', 2)
+on conflict (id) do nothing;
+
+insert into public.professional_services (tenant_id, professional_id, service_id, price_minor_override, duration_minutes_override)
+values
+  ('10000000-0000-4000-a000-000000000001', '32000000-0000-4000-a000-000000000001', '31000000-0000-4000-a000-000000000001', null, null),
+  ('10000000-0000-4000-a000-000000000001', '32000000-0000-4000-a000-000000000001', '31000000-0000-4000-a000-000000000002', null, null),
+  ('10000000-0000-4000-a000-000000000001', '32000000-0000-4000-a000-000000000001', '31000000-0000-4000-a000-000000000003', null, null),
+  ('10000000-0000-4000-a000-000000000001', '32000000-0000-4000-a000-000000000001', '31000000-0000-4000-a000-000000000006', null, null),
+  -- Caro cobra el semipermanente más barato y tarda un poco más
+  ('10000000-0000-4000-a000-000000000001', '32000000-0000-4000-a000-000000000002', '31000000-0000-4000-a000-000000000001', 1300000, 75),
+  ('10000000-0000-4000-a000-000000000001', '32000000-0000-4000-a000-000000000002', '31000000-0000-4000-a000-000000000004', null, null),
+  ('10000000-0000-4000-a000-000000000001', '32000000-0000-4000-a000-000000000002', '31000000-0000-4000-a000-000000000005', null, null),
+  ('10000000-0000-4000-a000-000000000001', '32000000-0000-4000-a000-000000000002', '31000000-0000-4000-a000-000000000006', null, null)
+on conflict (professional_id, service_id) do nothing;
+
+-- Estudio: lunes a viernes 9–13 y 14–19; sábados 9–14. (Las superpuestas se ignoran.)
+insert into public.working_hours (tenant_id, weekday, start_minute, end_minute)
+select '10000000-0000-4000-a000-000000000001'::uuid, d, s, e
+from generate_series(1, 5) d, (values (540, 780), (840, 1140)) v(s, e)
+union all
+select '10000000-0000-4000-a000-000000000001'::uuid, 6, 540, 840
+on conflict do nothing;
+-- Sofi: solo a la tarde, de lunes a viernes. Caro usa el horario del estudio.
+insert into public.working_hours (tenant_id, professional_id, weekday, start_minute, end_minute)
+select '10000000-0000-4000-a000-000000000001', '32000000-0000-4000-a000-000000000001', d, 840, 1140
+from generate_series(1, 5) d
+on conflict do nothing;
+
+-- Feriado del 8 de diciembre (todo el estudio) y vacaciones de Caro
+insert into public.schedule_blocks (id, tenant_id, professional_id, kind, period, all_day, note) values
+  ('34000000-0000-4000-a000-000000000001', '10000000-0000-4000-a000-000000000001', null, 'holiday',
+   '[2026-12-08 03:00Z, 2026-12-09 03:00Z)', true, 'Inmaculada Concepción'),
+  ('34000000-0000-4000-a000-000000000002', '10000000-0000-4000-a000-000000000001', '32000000-0000-4000-a000-000000000002', 'vacation',
+   '[2026-12-21 03:00Z, 2026-12-25 03:00Z)', true, null)
+on conflict (id) do nothing;
