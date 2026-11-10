@@ -194,5 +194,54 @@ ok(!baja.error && baja.data?.length === 1, "limpieza: la persona invitada queda 
 r = await req(F, "/admin", { cookies: ext });
 ok(r.status === 404, `después de la baja pierde el acceso al instante (HTTP ${r.status})`);
 
-console.log(fails ? `\n${fails} FALLARON` : "\nTodo ok");
+// ---------------------------------------------------------------------
+// Clientas: Google y "Mis datos"
+// ---------------------------------------------------------------------
+r = await req(F, "/");
+ok(r.html.includes('href="/ingresar"'), "sitio: ofrece Ingresar a quien no tiene sesión");
+r = await req(F, "/ingresar");
+ok(r.status === 200 && r.html.includes("Continuar con Google") && !/Cleo/.test(r.html), "ingresar: botón de Google, sin Cleo");
+const gfd = formFields(r.html, "Continuar con Google");
+r = await req(F, "/ingresar", { method: "POST", body: gfd });
+const authorize = r.location ? new URL(r.location) : null;
+ok(r.status === 303 && authorize?.pathname === "/auth/v1/authorize" && authorize.searchParams.get("provider") === "google",
+   "Google: redirige al authorize de Supabase con provider=google");
+ok(authorize?.searchParams.get("redirect_to") === "http://fresas.localhost:3000/auth/callback?next=%2Fmi-ficha",
+   "Google: vuelve al callback del MISMO estudio");
+ok(Boolean(authorize?.searchParams.get("code_challenge")) && Object.keys(r.set).some((k) => k.endsWith("-code-verifier")),
+   "Google: usa PKCE (code_challenge + verificador en cookie del host)");
+
+r = await req(F, "/auth/callback");
+ok(r.status === 307 && r.location === "http://fresas.localhost:3000/ingresar?error=google", "callback sin código → vuelve a ingresar con error");
+r = await req(F, "/auth/callback?code=falso");
+ok(r.status === 307 && r.location?.endsWith("/ingresar?error=google"), "callback con código inválido → error, sin sesión");
+r = await req(F, "/mi-ficha");
+ok(r.status === 307 && r.location === "/ingresar?next=%2Fmi-ficha", "mis datos sin sesión → ingresar");
+
+// Sesión de prueba (cuenta con contraseña del seed) para ejercitar "Mis datos".
+r = await login(F, "externa@otro.test", PASS, "/admin/invitacion?token=x");
+const cli = Object.fromEntries(Object.entries(r.set).filter(([k, v]) => k.startsWith("sb-") && v));
+r = await req(F, "/mi-ficha", { cookies: cli });
+if (r.html.includes("Crear mi ficha")) {
+  const cfd = formFields(r.html, "Crear mi ficha");
+  const c = await req(F, "/mi-ficha", { method: "POST", body: cfd, cookies: cli });
+  ok(c.status === 303 && c.location === "/mi-ficha", "mis datos: crear la ficha");
+  r = await req(F, "/mi-ficha", { cookies: cli });
+}
+ok(r.status === 200 && r.html.includes("Nombre y apellido") && r.html.includes("externa@otro.test"), "mis datos: muestra su ficha");
+const pfd = formFields(r.html, 'name="full_name"');
+pfd.append("full_name", "Externa E2E"); pfd.append("phone", "telefono-malo");
+r = await req(F, "/mi-ficha", { method: "POST", body: pfd, cookies: cli });
+ok(r.html.includes("Ese teléfono no parece válido"), "mis datos: valida el teléfono en el servidor");
+const pfd2 = formFields(r.html, 'name="full_name"');
+pfd2.append("full_name", "Externa E2E"); pfd2.append("phone", "+54 11 5555-0000");
+r = await req(F, "/mi-ficha", { method: "POST", body: pfd2, cookies: cli });
+ok(r.html.includes("guardamos tus datos"), "mis datos: guarda nombre y teléfono");
+// La cookie identifica a la PERSONA (el navegador la limita al host). Copiada a mano a
+// otro estudio sigue siendo la misma clienta: ahí ve solo su ficha de ESE estudio.
+r = await req(E, "/mi-ficha", { cookies: cli });
+ok(r.status === 200 && r.html.includes("Crear mi ficha") && !r.html.includes("Externa E2E") && !r.html.includes("5555-0000"),
+   "en otro estudio, la misma cuenta no ve los datos que cargó en Fresas");
+
+console.log(fails ?`\n${fails} FALLARON` : "\nTodo ok");
 process.exit(fails ? 1 : 0);

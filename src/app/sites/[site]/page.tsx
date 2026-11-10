@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getUser } from "@/lib/auth";
 import { contactItems } from "@/lib/contact";
 import { getStudio } from "@/lib/studio";
 
@@ -9,9 +11,18 @@ export default async function StudioHome({ params }: PageProps<"/sites/[site]">)
   if (!studio) notFound();
 
   const contact = contactItems(studio.contact);
+  const user = await getUser();
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 px-4 py-12">
+      <nav aria-label="Cuenta" className="flex justify-end">
+        <Link
+          href={user ? "/mi-ficha" : "/ingresar"}
+          className="rounded-lg border px-3 py-2 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
+        >
+          {user ? "Mis datos" : "Ingresar"}
+        </Link>
+      </nav>
       <header className="flex flex-col gap-3">
         <div className="h-px w-12 bg-gold" aria-hidden />
         <h1 className="text-3xl font-semibold text-foreground sm:text-4xl">{studio.name}</h1>
@@ -32,7 +43,7 @@ export default async function StudioHome({ params }: PageProps<"/sites/[site]">)
                 {item.href ? (
                   <a
                     href={item.href}
-                    className="text-foreground underline underline-offset-4 hover:text-primary"
+                    className="text-foreground underline underline-offset-4"
                     rel="noopener noreferrer"
                     target={item.href.startsWith("https://") ? "_blank" : undefined}
                   >
