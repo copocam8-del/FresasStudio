@@ -1,7 +1,7 @@
 # Fresas SaaS — Sprint 1: base de datos multi-tenant
 
 Base de datos de la plataforma (PostgreSQL / Supabase) con aislamiento entre estudios,
-roles y permisos, invitaciones, auditoría y una suite de **92 tests** que lo demuestran.
+roles y permisos, invitaciones, auditoría y una suite de **93 tests** que lo demuestran.
 
 Cubre del backlog: **ARC-05, ARC-06, ARC-07, ARC-10, AUTH-03, AUTH-04, TEN-01, TEN-05, TEN-06**
 y la base de **SAAS-02** (alta y suspensión de estudios).
@@ -16,11 +16,12 @@ supabase/
     20261110000300_audit.sql           auditoría de solo agregado
     20261110000400_rls.sql             privilegios por columna + Row Level Security
     20261110000500_rpc.sql             funciones de servidor (página pública, invitar, aceptar, Fresas Admin)
+    20261110000600_function_search_path.sql  search_path = '' en las funciones que no lo fijaban
   seed.sql                             SOLO desarrollo: Fresas Studio + Estudio Prueba
 db/
   local/00_supabase_shim.sql           SOLO local: imita auth.uid() y roles de Supabase
   tests/01_isolation_and_permissions.sql
-scripts/test-db.sh                     levanta Postgres temporal, migra, siembra y testea
+scripts/test-db.sh                     levanta Postgres temporal, migra, siembra y testea (Linux y Windows)
 ```
 
 ## Cómo correr los tests
@@ -29,10 +30,29 @@ Requiere PostgreSQL 15 o superior instalado (`initdb`, `pg_ctl`, `psql`).
 
 ```bash
 ./scripts/test-db.sh
-# … 92 tests · 92 ok · 0 fallidos
+# … 93 tests · 93 ok · 0 fallidos
 ```
 
 Corre todo dentro de una transacción que se descarta y no toca ninguna base existente.
+Levanta un Postgres temporal propio en el puerto 54329 y lo borra al terminar.
+
+### En Windows
+
+1. Instalar PostgreSQL con el instalador oficial (https://www.postgresql.org/download/windows/).
+   No hace falta agregarlo al PATH: el script busca la versión más nueva en
+   `C:\Program Files\PostgreSQL\<versión>\bin`.
+2. Correr el script desde **Git Bash** (no desde PowerShell ni cmd):
+
+   ```bash
+   cd "/c/Fresas Studio/fresas-saas"
+   ./scripts/test-db.sh
+   ```
+
+- Si PostgreSQL está en otra carpeta: `PGBIN="/c/ruta/a/PostgreSQL/17/bin" ./scripts/test-db.sh`.
+- Si el puerto 54329 está ocupado: `PGPORT_TEST=54400 ./scripts/test-db.sh`.
+- En Windows el Postgres temporal escucha solo en `localhost` (no hay sockets Unix) y usa la
+  configuración regional `C` con codificación UTF-8, porque `C.UTF-8` no existe en Windows.
+  No interfiere con el servicio de PostgreSQL que deja instalado el instalador (puerto 5432).
 
 ## Cómo aplicarlo en Supabase
 
@@ -54,7 +74,8 @@ Corre todo dentro de una transacción que se descarta y no toca ninguna base exi
 - Las visitantes sin sesión no pueden leer ninguna tabla. Solo ven la página pública de un
   estudio activo con `get_public_studio(slug)`, que no expone ids internos.
 - Tests "meta" que fallan si alguien agrega una tabla sin RLS, da permisos a `anon` o crea
-  una función `SECURITY DEFINER` sin `search_path` fijo.
+  una función en `public` o `app` (de cualquier tipo, incluidos triggers) sin
+  `search_path = ''`.
 
 **Permisos (sin escalada)**
 - Roles de sistema: Dueña, Encargada, Recepción y Profesional. Además, cada estudio puede
