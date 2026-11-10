@@ -243,5 +243,51 @@ r = await req(E, "/mi-ficha", { cookies: cli });
 ok(r.status === 200 && r.html.includes("Crear mi ficha") && !r.html.includes("Externa E2E") && !r.html.includes("5555-0000"),
    "en otro estudio, la misma cuenta no ve los datos que cargó en Fresas");
 
-console.log(fails ?`\n${fails} FALLARON` : "\nTodo ok");
+// ---------------------------------------------------------------------
+// Marca del estudio: colores y logo (Storage real), con limpieza al final
+// ---------------------------------------------------------------------
+r = await req(F, "/admin/marca", { cookies: pro });
+ok(r.status === 404, `marca: una profesional (sin settings.manage) → 404 (HTTP ${r.status})`);
+r = await req(F, "/admin/marca", { cookies: owner });
+ok(r.status === 200 && r.html.includes("Guardar marca"), "marca: la dueña ve el formulario");
+
+async function saveBrand(fields, logo) {
+  const page = await req(F, "/admin/marca", { cookies: owner });
+  const fd = formFields(page.html, "Guardar marca");
+  for (const [k, v] of Object.entries(fields)) fd.set(k, v);
+  if (logo) fd.set("logo", new Blob([logo.bytes], { type: logo.type }), logo.name);
+  return req(F, "/admin/marca", { method: "POST", body: fd, cookies: owner });
+}
+
+r = await saveBrand({ primary: "", accent: "", background: "#333333" });
+ok(r.html.includes("El fondo es demasiado oscuro"), "marca: un fondo oscuro se rechaza en el servidor");
+const svg = new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>');
+r = await saveBrand({ primary: "", accent: "", background: "" }, { bytes: svg, type: "image/png", name: "logo.png" });
+ok(r.html.includes("PNG, JPG o WebP"), "marca: un SVG disfrazado de .png se rechaza (se miran los bytes)");
+
+const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+r = await saveBrand({ primary: "#e91e63", accent: "#8a5a00", background: "#fff0f5" }, { bytes: png, type: "image/png", name: "logo.png" });
+ok(r.html.includes("guardamos la marca"), "marca: guarda colores y sube el logo");
+
+r = await req(F, "/");
+const logoSrc = /<img src="([^"]+\/storage\/v1\/object\/public\/brand\/[^"]+\.png)"/.exec(r.html)?.[1];
+ok(r.html.includes("--primary:#e91e63") && r.html.includes("--primary-foreground:#000000") && r.html.includes("--background:#fff0f5"),
+   "sitio de Fresas: aplica los colores del estudio");
+ok(Boolean(logoSrc) && r.html.includes(`rel="icon" href="${logoSrc}"`), "sitio de Fresas: muestra el logo y lo usa como ícono");
+const logoRes = logoSrc ? await fetch(logoSrc.replace(/&amp;/g, "&")) : null;
+ok(logoRes?.status === 200 && logoRes.headers.get("content-type") === "image/png", "el logo se sirve desde Storage como image/png");
+r = await req(E, "/");
+ok(!r.html.includes("#e91e63") && !r.html.includes("/public/brand/"), "Estudio Prueba no hereda la marca de Fresas");
+
+r = await saveBrand({ primary: "", accent: "", background: "", remove_logo: "on" });
+ok(r.html.includes("guardamos la marca"), "limpieza: vuelve a los colores predeterminados y quita el logo");
+// La URL pública puede seguir respondiendo un rato por la caché del CDN de Supabase;
+// lo que importa es que el archivo ya no esté en Storage.
+const left = await sb.storage.from("brand").list("10000000-0000-4000-a000-000000000001");
+ok(!left.error && left.data.filter((o) => o.name.startsWith("logo-")).length === 0,
+   "limpieza: el archivo del logo anterior se borró de Storage");
+r = await req(F, "/");
+ok(!r.html.includes("--primary:") && !r.html.includes("/public/brand/"), "sitio de Fresas: sin marca propia otra vez");
+
+console.log(fails ? `\n${fails} FALLARON` : "\nTodo ok");
 process.exit(fails ? 1 : 0);
