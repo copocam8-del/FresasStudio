@@ -5,7 +5,7 @@
 -- =====================================================================
 
 insert into auth.users (id, email) values
-  ('00000000-0000-4000-a000-000000000001', 'admin@fresas.test'),
+  ('00000000-0000-4000-a000-000000000001', 'admin@cleo.test'),
   ('00000000-0000-4000-a000-000000000002', 'duena@fresasstudio.test'),
   ('00000000-0000-4000-a000-000000000003', 'encargada@fresasstudio.test'),
   ('00000000-0000-4000-a000-000000000004', 'profesional@fresasstudio.test'),
@@ -16,7 +16,7 @@ insert into auth.users (id, email) values
 insert into public.platform_admins (user_id) values ('00000000-0000-4000-a000-000000000001');
 
 insert into public.tenants (id, slug, name, status) values
-  ('10000000-0000-4000-a000-000000000001', 'fresas-studio',  'Fresas Studio',  'active'),
+  ('10000000-0000-4000-a000-000000000001', 'fresas',         'Fresas Studio',  'active'),
   ('10000000-0000-4000-a000-000000000002', 'estudio-prueba', 'Estudio Prueba', 'trial');
 
 update public.tenant_settings

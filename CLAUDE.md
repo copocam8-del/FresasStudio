@@ -1,9 +1,10 @@
 @AGENTS.md
 
-# Fresas SaaS — reglas del proyecto
+# Cleo — reglas del proyecto
 
-Plataforma SaaS **multi-tenant** para estudios de belleza: página pública de cada estudio,
-Fresas Manager (panel del estudio) y Fresas Admin (superadministración). Contexto completo en
+**Cleo** es una plataforma SaaS **multi-tenant** y de **marca blanca** para estudios de belleza:
+sitio público de cada estudio, Cleo Manager (panel del estudio) y Cleo Admin
+(superadministración). Fresas Studio es el primer estudio cliente. Contexto completo en
 `README.md` y en `docs/` (brief y backlog técnico con IDs como ARC-01, BOOK-05, POL-03).
 
 ## Stack
@@ -22,7 +23,7 @@ Fresas Manager (panel del estudio) y Fresas Admin (superadministración). Contex
   a través de funciones como `get_public_studio(slug)`, sin ids internos.
 - Nunca confiar en un `tenant_id` enviado por el navegador: el servidor lo deriva de la
   sesión/membresía y la base lo vuelve a validar con RLS.
-- Fresas Admin **no** tiene acceso por defecto a clientas, turnos ni caja de los estudios.
+- Cleo Admin **no** tiene acceso por defecto a clientas, turnos ni caja de los estudios.
 - Los estudios no se borran: se suspenden o cancelan. Suspender = solo lectura.
 
 ## Regla 2 — RLS obligatoria en cada tabla nueva

@@ -4,91 +4,7 @@
 -- Cada usuaria se simula igual que en Supabase: rol "authenticated"
 -- + request.jwt.claims con su id.
 -- =====================================================================
-\set ON_ERROR_STOP on
-\set QUIET on
-\pset tuples_only on
-\pset format unaligned
-\o /dev/null
-
-begin;
-
--- ---------------------------------------------------------------------
--- Mini framework de tests
--- ---------------------------------------------------------------------
-create schema tests;
-grant usage on schema tests to anon, authenticated;
-
-create table tests.results (n serial primary key, ok boolean not null, name text not null);
-grant select, insert on tests.results to anon, authenticated;
-grant usage on sequence tests.results_n_seq to anon, authenticated;
-
-create function tests.login(p_email text) returns void
-language plpgsql security definer as $$
-declare v_id uuid;
-begin
-  if p_email is null then
-    perform set_config('request.jwt.claims', '', true);
-    return;
-  end if;
-  select id into v_id from auth.users where email = p_email;
-  if v_id is null then raise exception 'Usuario de test inexistente: %', p_email; end if;
-  perform set_config('request.jwt.claims',
-    json_build_object('sub', v_id, 'email', p_email, 'role', 'authenticated')::text, true);
-end $$;
-grant execute on function tests.login(text) to anon, authenticated;
-
-create function tests.ok(p_cond boolean, p_name text) returns void
-language plpgsql as $$
-begin
-  insert into tests.results (ok, name) values (coalesce(p_cond, false), p_name);
-  raise notice '%  %', case when coalesce(p_cond, false) then 'ok  ' else 'FAIL' end, p_name;
-end $$;
-
--- Ejecuta SQL y espera un error (opcionalmente con un texto en el mensaje)
-create function tests.throws(p_sql text, p_name text, p_like text default null) returns void
-language plpgsql as $$
-begin
-  begin
-    execute p_sql;
-  exception when others then
-    perform tests.ok(p_like is null or sqlerrm ilike '%' || p_like || '%',
-                     p_name || case when p_like is not null and sqlerrm not ilike '%' || p_like || '%'
-                                    then ' [error inesperado: ' || sqlerrm || ']' else '' end);
-    return;
-  end;
-  perform tests.ok(false, p_name || ' [no dio error]');
-end $$;
-
--- Ejecuta SQL y devuelve cuántas filas afectó
-create function tests.affected(p_sql text) returns bigint
-language plpgsql as $$
-declare n bigint;
-begin
-  execute p_sql;
-  get diagnostics n = row_count;
-  return n;
-end $$;
-
--- Atajos de sesión
-\set as_super     'reset role;'
-\set as_anon      'reset role; do $x$ begin perform tests.login(null); end $x$; set local role anon;'
-\set as_admin     'reset role; do $x$ begin perform tests.login(''admin@fresas.test''); end $x$; set local role authenticated;'
-\set as_owner_a   'reset role; do $x$ begin perform tests.login(''duena@fresasstudio.test''); end $x$; set local role authenticated;'
-\set as_manager_a 'reset role; do $x$ begin perform tests.login(''encargada@fresasstudio.test''); end $x$; set local role authenticated;'
-\set as_pro_a     'reset role; do $x$ begin perform tests.login(''profesional@fresasstudio.test''); end $x$; set local role authenticated;'
-\set as_owner_b   'reset role; do $x$ begin perform tests.login(''duena@estudioprueba.test''); end $x$; set local role authenticated;'
-\set as_nueva     'reset role; do $x$ begin perform tests.login(''nueva@fresasstudio.test''); end $x$; set local role authenticated;'
-\set as_externa   'reset role; do $x$ begin perform tests.login(''externa@otro.test''); end $x$; set local role authenticated;'
-
-\set A '''10000000-0000-4000-a000-000000000001'''
-\set B '''10000000-0000-4000-a000-000000000002'''
-
-:as_super
-select id as role_receptionist from public.roles where tenant_id is null and key = 'receptionist' \gset
-select id as role_owner        from public.roles where tenant_id is null and key = 'owner' \gset
-select id as uid_owner_a from auth.users where email = 'duena@fresasstudio.test' \gset
-select id as uid_pro_a   from auth.users where email = 'profesional@fresasstudio.test' \gset
-select id as uid_owner_b from auth.users where email = 'duena@estudioprueba.test' \gset
+\ir lib/setup.sql
 
 -- =====================================================================
 -- 1. Visitante sin sesión (página pública)
@@ -96,8 +12,8 @@ select id as uid_owner_b from auth.users where email = 'duena@estudioprueba.test
 :as_anon
 select tests.throws('select * from public.tenants', 'anon: no puede leer la tabla de estudios', 'permission denied');
 select tests.throws('select * from public.memberships', 'anon: no puede leer membresías', 'permission denied');
-select tests.ok((select count(*) = 1 from public.get_public_studio('fresas-studio')), 'anon: ve la página pública de Fresas Studio');
-select tests.ok((select deposit_percent = 50 and cancellation_window_hours = 48 from public.get_public_studio('Fresas-Studio ')),
+select tests.ok((select count(*) = 1 from public.get_public_studio('fresas')), 'anon: ve la página pública de Fresas Studio');
+select tests.ok((select deposit_percent = 50 and cancellation_window_hours = 48 from public.get_public_studio(' Fresas ')),
                 'anon: la página pública muestra seña 50% y 48 h (y normaliza la URL)');
 select tests.ok((select count(*) = 0 from public.get_public_studio('no-existe')), 'anon: URL inexistente no devuelve nada');
 select tests.throws($$select public.accept_invitation('x')$$, 'anon: no puede aceptar invitaciones', 'permission denied');
@@ -140,9 +56,9 @@ select tests.throws(format('update public.tenants set status = %L where id = %L'
 select tests.throws($$insert into public.tenants (slug, name) values ('otro-estudio', 'Otro')$$,
                     'dueña A: no puede crear estudios', 'permission denied');
 select tests.throws($$select * from public.admin_create_studio('otro-estudio', 'Otro', 'x@x.test')$$,
-                    'dueña A: no puede usar la función de Fresas Admin', 'Solo Fresas Admin');
+                    'dueña A: no puede usar la función de Cleo Admin', 'Solo Cleo Admin');
 select tests.throws(format('select public.admin_set_tenant_status(%L, %L)', :B, 'suspended'),
-                    'dueña A: no puede suspender otro estudio', 'Solo Fresas Admin');
+                    'dueña A: no puede suspender otro estudio', 'Solo Cleo Admin');
 select tests.ok((select count(*) = 3 from public.profiles), 'dueña A: ve los perfiles de su equipo (3)');
 select tests.ok((select count(*) = 1 and bool_and(role_key = 'owner') from public.my_studios()), 'dueña A: my_studios() devuelve su estudio con rol dueña');
 
@@ -249,16 +165,16 @@ select tests.ok((select count(*) = 0 from public.tenants), 'profesional dada de 
 select tests.ok((select count(*) = 0 from public.my_studios()), 'profesional dada de baja: my_studios() vacío');
 :as_admin
 select tests.throws(format('update public.memberships set status = %L where user_id = %L', 'revoked', :'uid_owner_a'),
-                    'ni Fresas Admin puede dejar un estudio sin dueña', 'al menos una dueña');
+                    'ni Cleo Admin puede dejar un estudio sin dueña', 'al menos una dueña');
 
 -- =====================================================================
--- 8. Fresas Admin
+-- 8. Cleo Admin
 -- =====================================================================
 :as_admin
-select tests.ok((select count(*) = 2 from public.tenants), 'Fresas Admin: ve todos los estudios');
+select tests.ok((select count(*) = 2 from public.tenants), 'Cleo Admin: ve todos los estudios');
 select * from public.admin_create_studio('nuevo-estudio', 'Nuevo Estudio', 'Duena@Nuevo.test') \gset new_
 select tests.ok(:'new_tenant_id' is not null and length(:'new_owner_invitation_token') = 64,
-                'Fresas Admin: crea un estudio y recibe el link de invitación de la dueña');
+                'Cleo Admin: crea un estudio y recibe el link de invitación de la dueña');
 select tests.ok((select deposit_percent = 50 and cancellation_window_hours = 48 and policy_version = 1
                  from public.tenant_settings where tenant_id = :'new_tenant_id'),
                 'estudio nuevo: nace con seña 50% y regla de 48 h');
@@ -268,11 +184,11 @@ select tests.ok((select count(*) = 1 from public.invitations i join public.roles
 select tests.throws($$select * from public.admin_create_studio('admin', 'X', 'x@x.test')$$, 'URL reservada rechazada', 'reservada');
 select tests.throws($$select * from public.admin_create_studio('Mi Estudio', 'X', 'x@x.test')$$, 'URL con espacios/mayúsculas rechazada', null);
 select tests.throws($$select * from public.admin_create_studio('ok-estudio', 'X', 'x@x.test', 'Marte/Olympus')$$, 'zona horaria inválida rechazada', 'Zona horaria');
-select tests.throws($$select * from public.admin_create_studio('fresas-studio', 'Copia', 'x@x.test')$$, 'URL duplicada rechazada', 'duplicate');
+select tests.throws($$select * from public.admin_create_studio('fresas', 'Copia', 'x@x.test')$$, 'URL duplicada rechazada', 'duplicate');
 select tests.throws($$select * from public.admin_create_studio('otro-ok', 'Otro', 'no-es-un-email')$$, 'email inválido rechazado', 'email');
 select public.admin_set_tenant_status(:B, 'suspended');
 select tests.ok((select status = 'suspended' and suspended_at is not null from public.tenants where id = :B),
-                'Fresas Admin: suspende el estudio B y queda registrada la fecha');
+                'Cleo Admin: suspende el estudio B y queda registrada la fecha');
 
 :as_owner_b
 select tests.ok((select count(*) = 1 from public.tenant_settings), 'estudio suspendido: la dueña todavía puede consultar sus datos');
@@ -334,21 +250,4 @@ select tests.ok((select count(*) = 0 from information_schema.columns c
                    and c.table_name not in ('roles', 'audit_logs')),
                 'meta: tenant_id es obligatorio en toda tabla de negocio');
 
--- ---------------------------------------------------------------------
--- Resumen
--- ---------------------------------------------------------------------
-\o
-\pset tuples_only on
-select format('%s tests · %s ok · %s fallidos',
-              count(*), count(*) filter (where ok), count(*) filter (where not ok))
-from tests.results;
-select '  FALLÓ: ' || name from tests.results where not ok order by n;
-
-do $$
-begin
-  if exists (select 1 from tests.results where not ok) then
-    raise exception 'Hay tests fallidos';
-  end if;
-end $$;
-
-rollback;
+\ir lib/finish.sql

@@ -1,7 +1,14 @@
-# Fresas SaaS — Sprint 1: base de datos multi-tenant
+# Cleo — plataforma SaaS para estudios de belleza
+
+**Cleo** es una plataforma multi-tenant y de marca blanca: cada estudio tiene su sitio
+(`{slug}.cleo.com.ar`) y su panel (Cleo Manager), y la plataforma se administra desde
+Cleo Admin. **Fresas Studio** (`fresas`) es el primer estudio cliente.
+
+## Sprint 1: base de datos multi-tenant
 
 Base de datos de la plataforma (PostgreSQL / Supabase) con aislamiento entre estudios,
-roles y permisos, invitaciones, auditoría y una suite de **93 tests** que lo demuestran.
+roles y permisos, invitaciones, auditoría y una suite de tests que lo demuestran.
+El plan del Sprint 2 está en [`docs/sprint-2-plan.md`](docs/sprint-2-plan.md).
 
 Cubre del backlog: **ARC-05, ARC-06, ARC-07, ARC-10, AUTH-03, AUTH-04, TEN-01, TEN-05, TEN-06**
 y la base de **SAAS-02** (alta y suspensión de estudios).
@@ -15,12 +22,15 @@ supabase/
     20261110000200_access_control.sql  permisos, roles, membresías, invitaciones + reglas anti-escalada
     20261110000300_audit.sql           auditoría de solo agregado
     20261110000400_rls.sql             privilegios por columna + Row Level Security
-    20261110000500_rpc.sql             funciones de servidor (página pública, invitar, aceptar, Fresas Admin)
+    20261110000500_rpc.sql             funciones de servidor (página pública, invitar, aceptar, Cleo Admin)
     20261110000600_function_search_path.sql  search_path = '' en las funciones que no lo fijaban
+    20261110000700_cleo_rename.sql     renombre a Cleo: slugs reservados, "fresas" liberado, mensajes
   seed.sql                             SOLO desarrollo: Fresas Studio + Estudio Prueba
 db/
   local/00_supabase_shim.sql           SOLO local: imita auth.uid() y roles de Supabase
+  tests/lib/setup.sql, finish.sql      framework común (transacción, asserts, atajos de sesión)
   tests/01_isolation_and_permissions.sql
+  tests/02_cleo_rename.sql
 scripts/test-db.sh                     levanta Postgres temporal, migra, siembra y testea (Linux y Windows)
 ```
 
@@ -30,7 +40,7 @@ Requiere PostgreSQL 15 o superior instalado (`initdb`, `pg_ctl`, `psql`).
 
 ```bash
 ./scripts/test-db.sh
-# … 93 tests · 93 ok · 0 fallidos
+# … un resumen por archivo, p. ej. «93 tests · 93 ok · 0 fallidos»
 ```
 
 Corre todo dentro de una transacción que se descarta y no toca ninguna base existente.
@@ -83,7 +93,7 @@ Levanta un Postgres temporal propio en el puerto 54329 y lo borra al terminar.
 - Nadie puede dar un rol ni un permiso que no tenga. Por ejemplo, la encargada no puede
   nombrar dueñas ni dar acceso a Mercado Pago.
 - Nadie puede modificar su propio acceso.
-- Un estudio nunca queda sin dueña activa, ni siquiera por acción de Fresas Admin.
+- Un estudio nunca queda sin dueña activa, ni siquiera por acción de Cleo Admin.
 - Si se da de baja a una persona, pierde el acceso al instante.
 
 **Invitaciones**
@@ -92,7 +102,7 @@ Levanta un Postgres temporal propio en el puerto 54329 y lo borra al terminar.
   de un solo uso.
 
 **Estudios y políticas**
-- Solo Fresas Admin crea estudios, cambia su URL o los suspende. Suspender no borra nada:
+- Solo Cleo Admin crea estudios, cambia su URL o los suspende. Suspender no borra nada:
   el estudio queda en solo lectura y su página pública se oculta.
 - Seña 50% y ventana de 48 h por defecto, configurables por estudio.
 - Cada cambio de seña o de política crea una **versión inmutable**. Así, las reservas
@@ -110,7 +120,7 @@ Levanta un Postgres temporal propio en el puerto 54329 y lo borra al terminar.
 |---|---|
 | Identificación del tenant | Por `slug` en la URL pública y por membresía en el panel. La forma final del dominio (ruta, subdominio o propio) sigue pendiente, pero no cambia el esquema. |
 | Operaciones sensibles | Por funciones de base de datos (RPC) que validan permisos adentro. La interfaz nunca decide. |
-| Fresas Admin y datos del estudio | Puede ver estudios, configuración y equipos (para soporte). **No** tendrá acceso por defecto a clientas, turnos ni caja cuando se agreguen. |
+| Cleo Admin y datos del estudio | Puede ver estudios, configuración y equipos (para soporte). **No** tendrá acceso por defecto a clientas, turnos ni caja cuando se agreguen. |
 | Borrado | Los estudios no se borran: solo se suspenden o cancelan. |
 
 ## Pendiente (no entró en este sprint)
