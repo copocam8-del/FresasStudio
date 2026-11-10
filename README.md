@@ -94,12 +94,11 @@ Corre todo dentro de una transacción que se descarta y no toca ninguna base exi
 
 ## Pendiente (no entró en este sprint)
 
-- **Proyecto Next.js + Tailwind (ARC-01/02):** no se pudo crear en este entorno porque no
-  tiene acceso a internet para instalar paquetes. Se hace con
-  `npx create-next-app@latest` apenas haya red.
-- **Crear los proyectos de Supabase y GitHub (ARC-03/04):** requiere tus cuentas.
+- **Crear los proyectos de Supabase (ARC-03/04):** uno para staging y otro para producción;
+  requiere tu cuenta. Después, aplicar las migraciones como indica "Cómo aplicarlo en
+  Supabase" y validarlas contra un proyecto real.
 - **Pantallas de login, recuperación y aceptación de invitación (AUTH-01/02):** las provee
-  Supabase Auth y se conectan cuando exista el frontend.
+  Supabase Auth; falta conectarlas al frontend.
 - **Envío del email de invitación:** el backend recibe el token y lo envía con Resend.
 - **Backups y monitoreo (ARC-09):** se configuran en Supabase (PITR) y Vercel.
 - **Módulos y límites por plan (SAAS-04):** el esquema ya deja lugar para `tenant_entitlements`.
