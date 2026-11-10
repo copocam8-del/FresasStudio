@@ -4,6 +4,7 @@ import { AuthShell } from "@/components/auth/auth-shell";
 import { Button } from "@/components/ui/button";
 import { getUser } from "@/lib/auth";
 import { getStudio } from "@/lib/studio";
+import { studioLogo } from "@/lib/studio-brand";
 import { safeNext } from "@/lib/validation";
 import { googleSignInAction } from "../client-actions";
 
@@ -20,7 +21,7 @@ export default async function ClientSignInPage({ params, searchParams }: PagePro
 
   return (
     <AuthShell
-      brandName={studio.name}
+      brandName={studio.name} logoUrl={studioLogo(studio)}
       title="Ingresar"
       description="Entrá con tu cuenta de Google para ver tus datos y, pronto, tus turnos."
     >

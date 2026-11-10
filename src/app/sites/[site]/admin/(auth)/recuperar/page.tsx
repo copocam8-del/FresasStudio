@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { getStudio } from "@/lib/studio";
+import { studioLogo } from "@/lib/studio-brand";
 import { RecoverForm } from "./recover-form";
 
 export const metadata: Metadata = { title: "Recuperar contraseña" };
@@ -13,7 +14,7 @@ export default async function RecoverPage({ params }: PageProps<"/sites/[site]/a
 
   return (
     <AuthShell
-      brandName={studio.name}
+      brandName={studio.name} logoUrl={studioLogo(studio)}
       title="Recuperar contraseña"
       description="Te enviamos un link para crear una contraseña nueva."
     >

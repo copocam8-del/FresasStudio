@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { getUser } from "@/lib/auth";
 import { getStudio } from "@/lib/studio";
+import { studioLogo } from "@/lib/studio-brand";
 import { ResetForm } from "./reset-form";
 
 export const metadata: Metadata = { title: "Contraseña nueva" };
@@ -16,7 +17,7 @@ export default async function ResetPage({ params }: PageProps<"/sites/[site]/adm
   const user = await getUser();
 
   return (
-    <AuthShell brandName={studio.name} title="Contraseña nueva">
+    <AuthShell brandName={studio.name} logoUrl={studioLogo(studio)} title="Contraseña nueva">
       {user ? (
         <ResetForm />
       ) : (

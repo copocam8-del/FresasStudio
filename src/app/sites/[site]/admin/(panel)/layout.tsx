@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { StudioLogo } from "@/components/brand/studio-logo";
 import { Button } from "@/components/ui/button";
 import { can, requireStaff } from "@/lib/auth";
+import { studioLogo } from "@/lib/studio-brand";
 import { signOutAction } from "../actions";
 
 export const metadata: Metadata = { robots: { index: false } };
@@ -25,9 +27,12 @@ export default async function PanelLayout({ children, params }: LayoutProps<"/si
     <div className="flex flex-1 flex-col">
       <header className="border-b bg-card">
         <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <div className="flex flex-col">
-            <span className="font-semibold text-card-foreground">{ctx.studio.name}</span>
-            <span className="text-sm text-muted-foreground">{ctx.roleName}</span>
+          <div className="flex items-center gap-3">
+            <StudioLogo src={studioLogo(ctx.studio)} name={ctx.studio.name} className="h-9" />
+            <div className="flex flex-col">
+              <span className="font-semibold text-card-foreground">{ctx.studio.name}</span>
+              <span className="text-sm text-muted-foreground">{ctx.roleName}</span>
+            </div>
           </div>
           <form action={signOutAction}>
             <Button type="submit" variant="outline" size="sm" className="h-9">

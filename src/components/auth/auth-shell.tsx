@@ -1,3 +1,4 @@
+import { StudioLogo } from "@/components/brand/studio-logo";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 /**
@@ -6,18 +7,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
  */
 export function AuthShell({
   brandName,
+  logoUrl = null,
   title,
   description,
   children,
 }: {
   brandName: string;
+  logoUrl?: string | null;
   title: string;
   description?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-4 py-10">
-      <p className="text-center text-lg font-semibold text-foreground">{brandName}</p>
+      <div className="flex flex-col items-center gap-3">
+        <StudioLogo src={logoUrl} name={brandName} />
+        <p className="text-center text-lg font-semibold text-foreground">{brandName}</p>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>

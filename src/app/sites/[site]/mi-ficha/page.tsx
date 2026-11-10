@@ -4,6 +4,7 @@ import { AuthShell } from "@/components/auth/auth-shell";
 import { Button } from "@/components/ui/button";
 import { getUser } from "@/lib/auth";
 import { getStudio } from "@/lib/studio";
+import { studioLogo } from "@/lib/studio-brand";
 import { serverSupabase } from "@/lib/supabase/server";
 import { clientSignOutAction, createMyProfileAction } from "../client-actions";
 import { ProfileForm } from "./profile-form";
@@ -35,7 +36,7 @@ export default async function MyProfilePage({ params }: PageProps<"/sites/[site]
 
   if (!profile) {
     return (
-      <AuthShell brandName={studio.name} title="Mis datos">
+      <AuthShell brandName={studio.name} logoUrl={studioLogo(studio)} title="Mis datos">
         <p className="text-sm text-foreground">
           Todavía no tenés tus datos cargados en {studio.name}.
         </p>
@@ -51,7 +52,7 @@ export default async function MyProfilePage({ params }: PageProps<"/sites/[site]
 
   return (
     <AuthShell
-      brandName={studio.name}
+      brandName={studio.name} logoUrl={studioLogo(studio)}
       title="Mis datos"
       description={profile.email ? <>Ingresaste con {profile.email}.</> : undefined}
     >

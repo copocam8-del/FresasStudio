@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getUser } from "@/lib/auth";
+import { StudioLogo } from "@/components/brand/studio-logo";
 import { contactItems } from "@/lib/contact";
 import { getStudio } from "@/lib/studio";
+import { studioLogo } from "@/lib/studio-brand";
 
 // Página pública de un estudio. Todos los datos son reales (get_public_studio).
 export default async function StudioHome({ params }: PageProps<"/sites/[site]">) {
@@ -24,6 +26,7 @@ export default async function StudioHome({ params }: PageProps<"/sites/[site]">)
         </Link>
       </nav>
       <header className="flex flex-col gap-3">
+        <StudioLogo src={studioLogo(studio)} name={studio.name} className="h-16 self-start" />
         <div className="h-px w-12 bg-gold" aria-hidden />
         <h1 className="text-3xl font-semibold text-foreground sm:text-4xl">{studio.name}</h1>
         {studio.description && (
