@@ -48,3 +48,27 @@ export const getStudio = cache(async (siteParam: string): Promise<PublicStudio |
   const row = Array.isArray(data) ? data[0] : null;
   return (row as PublicStudio | undefined) ?? null;
 });
+
+/** Catálogo público (public.get_public_catalog): solo lo activo y visible. */
+export type PublicCatalog = {
+  currency: string;
+  categories: { id: string; name: string }[];
+  services: {
+    id: string;
+    category_id: string | null;
+    name: string;
+    description: string | null;
+    duration_minutes: number;
+    price_minor: number;
+    price_is_from: boolean;
+    photo_path: string | null;
+    professional_ids: string[];
+  }[];
+  professionals: { id: string; display_name: string; bio: string | null; photo_path: string | null; service_ids: string[] }[];
+};
+
+export const getPublicCatalog = cache(async (slug: string): Promise<PublicCatalog | null> => {
+  const { data, error } = await publicSupabase().rpc("get_public_catalog", { p_slug: slug });
+  if (error) throw new Error(`No se pudo cargar el catálogo: ${error.message}`);
+  return (data as PublicCatalog | null) ?? null;
+});

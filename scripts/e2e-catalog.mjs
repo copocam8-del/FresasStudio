@@ -174,4 +174,20 @@ ok(!(await sb.from("schedule_blocks").select("id").eq("id", blk.id)).data?.lengt
 r = await req(F, "/admin/bloqueos", { cookies: pro });
 ok(r.status === 200 && !r.html.includes("Nuevo bloqueo"), "bloqueos: la profesional los ve sin poder cargar (N6)");
 
+// ---------------------------------------------------------------------
+// Sitio público: catálogo y profesionales
+// ---------------------------------------------------------------------
+r = await req(F, "/");
+const site = r.html.replace(/<!-- -->/g, "");
+ok(r.status === 200 && site.includes(">Servicios<") && site.includes(">Uñas<") && site.includes(">Pestañas<"),
+   "sitio: muestra los servicios agrupados por categoría");
+ok(/desde \$\s13\.000/.test(site) && /\$\s9\.000/.test(site) && site.includes("1 h 30 min"),
+   "sitio: precios en formato argentino («desde» cuando corresponde) y duraciones legibles");
+ok(site.includes("Con Sofi o Caro") && site.includes(">Profesionales<") && site.includes("Especialista en uñas."),
+   "sitio: muestra las profesionales y quién hace cada servicio");
+ok(!site.includes("Diseño con henna"), "sitio: el servicio «no visible en el sitio» no aparece");
+ok(!/Cleo/.test(site) && !/Reservar/.test(site), "sitio: sin «Cleo» y sin botón «Reservar» que todavía no funciona");
+r = await req("estudio-prueba.localhost:3000", "/");
+ok(r.status === 200 && !r.html.includes(">Servicios<") && !r.html.includes("Esmaltado"), "Estudio Prueba: no muestra nada del catálogo de Fresas");
+
 done();

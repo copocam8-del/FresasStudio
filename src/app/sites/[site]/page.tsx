@@ -2,18 +2,20 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getUser } from "@/lib/auth";
 import { StudioLogo } from "@/components/brand/studio-logo";
+import { CatalogSections } from "@/components/site/catalog-sections";
 import { contactItems } from "@/lib/contact";
-import { getStudio } from "@/lib/studio";
+import { getPublicCatalog, getStudio } from "@/lib/studio";
 import { studioLogo } from "@/lib/studio-brand";
 
-// Página pública de un estudio. Todos los datos son reales (get_public_studio).
+// Página pública de un estudio. Todos los datos son reales (get_public_studio y
+// get_public_catalog).
 export default async function StudioHome({ params }: PageProps<"/sites/[site]">) {
   const { site } = await params;
   const studio = await getStudio(site);
   if (!studio) notFound();
 
   const contact = contactItems(studio.contact);
-  const user = await getUser();
+  const [user, catalog] = await Promise.all([getUser(), getPublicCatalog(studio.slug)]);
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 px-4 py-12">
@@ -33,6 +35,8 @@ export default async function StudioHome({ params }: PageProps<"/sites/[site]">)
           <p className="whitespace-pre-line text-lg text-muted-foreground">{studio.description}</p>
         )}
       </header>
+
+      {catalog && <CatalogSections catalog={catalog} />}
 
       {contact.length > 0 && (
         <section aria-labelledby="contacto" className="flex flex-col gap-3">
