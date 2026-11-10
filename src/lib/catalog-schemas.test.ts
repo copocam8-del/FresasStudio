@@ -32,7 +32,9 @@ describe("serviceSchema", () => {
     });
   });
   it("las casillas sin tildar no viajan en el formulario (campo ausente = false)", () => {
-    const { price_is_from: _a, show_online: _b, ...rest } = base;
+    const rest: Partial<typeof base> = { ...base };
+    delete rest.price_is_from;
+    delete rest.show_online;
     const parsed = serviceSchema.parse(rest);
     expect(parsed.price_is_from).toBe(false);
     expect(parsed.show_online).toBe(false);

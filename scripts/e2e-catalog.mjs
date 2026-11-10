@@ -1,7 +1,7 @@
 // Pruebas de punta a punta del catálogo, profesionales, horarios y bloqueos (Sprint 3).
 // Requiere la app en localhost:3000 (npm run dev o next start) apuntando al Supabase de
 // DESARROLLO con el seed. Uso: node scripts/e2e-catalog.mjs (limpia lo que crea).
-import { done, F, formFields, login, ok, req, submit, supabaseAs } from "./e2e-lib.mjs";
+import { done, F, login, ok, req, submit, supabaseAs } from "./e2e-lib.mjs";
 
 const owner = await login(F, "duena@fresasstudio.test");
 const pro = await login(F, "profesional@fresasstudio.test");
@@ -56,5 +56,4 @@ ok(Boolean(archived?.archived_at), "archivar: el servicio queda archivado, no bo
 r = await submit(F, "/admin/servicios/categorias", "Agregar", { name: "UÑAS" }, owner);
 ok(r.html.includes("Ya existe una categoría con ese nombre"), "categorías: «UÑAS» se rechaza porque ya existe «Uñas»");
 
-export { owner, pro, sb, stamp };
-if (import.meta.url === `file://${process.argv[1].replace(/\\/g, "/")}` || process.argv[1].endsWith("e2e-catalog.mjs")) done();
+done();
