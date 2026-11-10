@@ -58,9 +58,16 @@ Cada migración que cree una tabla debe, en la misma migración:
    y correr `./scripts/test-db.sh`. Los tests "meta" fallan si una tabla queda sin RLS.
 
 Además:
+- Referencias entre tablas de un estudio con **claves compuestas** `(tenant_id, x_id) →
+  (tenant_id, id)`: la base impide mezclar estudios aunque falle la RLS.
+- Lo que un turno pueda referenciar (servicios, profesionales) **no se borra: se archiva**.
+- Comparaciones de texto sin mayúsculas con `lower(x collate "und-x-icu")` (en locale C,
+  `lower()` no convierte letras con acento ni la Ñ).
+- Escrituras de varias filas que tienen que ser "todo o nada" (por ejemplo, la semana de un
+  horario): función `SECURITY INVOKER` (la RLS sigue aplicando), no varias llamadas sueltas.
 - No modificar migraciones ya aplicadas: crear una nueva con timestamp posterior.
 - Entornos: el proyecto linkeado (`bitfpryusoonfbgdtxkg`) es **desarrollo**: migraciones y
-  seed. Producción será un proyecto nuevo (pendiente) y se le aplica solo con
+  seed (si `seed.sql` cambia, aplicarlo con `db query --remote --file supabase/seed.sql`). Producción será un proyecto nuevo (pendiente) y se le aplica solo con
   `--remote=<ref de producción>` explícito. `seed.sql` **nunca** va a producción.
 - La `service_role` key solo se usa en el servidor y nunca para saltear RLS en flujos de
   usuaria; jamás en código cliente ni en variables `NEXT_PUBLIC_*`.

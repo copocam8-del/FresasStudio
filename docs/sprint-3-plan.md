@@ -1,7 +1,8 @@
 # Sprint 3 — Plan: servicios y profesionales (Épica 04)
 
-> Estado: **aprobado** (N1 a N10 según las recomendaciones). Se implementa por pasos,
-> con un commit por paso y los tests en verde en cada uno.
+> Estado: **implementado** (pasos 1 a 10). Queda el checklist manual del README (celular).
+> Cambio respecto del plan: las franjas se guardan en minutos del día (540 = 09:00) en lugar
+> de `time`, y las fotos se integraron en los formularios de los pasos 5 y 6.
 
 Backlog: SERV-01 (categorías y servicios), SERV-02 (precio y duración), SERV-03 (asignar
 servicios a profesionales), SERV-04 (horarios y descansos), SERV-05 (bloqueos, vacaciones y

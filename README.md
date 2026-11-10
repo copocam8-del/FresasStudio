@@ -9,6 +9,8 @@ un estudio se ve solo su nombre, sus colores y su logo; nunca "Cleo".
 - Sprint 1: base de datos multi-tenant (estudios, roles, permisos, invitaciones, auditoría).
 - Sprint 2 ([plan](docs/sprint-2-plan.md)): renombre a Cleo, subdominios, acceso del equipo,
   clientas con Google, fichas por estudio y marca de cada estudio.
+- Sprint 3 ([plan](docs/sprint-3-plan.md)): servicios, categorías, profesionales (con o sin
+  cuenta), horarios con descansos, bloqueos, tiempo extra, fotos y catálogo en el sitio.
 
 ## Estructura
 
@@ -22,7 +24,8 @@ src/
       page.tsx                 página pública con su marca
       ingresar/ auth/callback/ mi-ficha/   clientas: Google y sus datos
       admin/                   panel del estudio: login, recuperar, restablecer, invitación,
-                               inicio, equipo (invitar con link), marca (colores y logo)
+                               inicio, servicios (+ categorías), profesionales, horarios,
+                               bloqueos, equipo (invitar con link), marca (colores y logo)
   lib/                         host, auth (DAL), validación, color/contraste, marca, Supabase
 supabase/
   migrations/
@@ -37,14 +40,20 @@ supabase/
     20261110000900_team_auth.sql       vista previa de invitación, email confirmado, equipo con emails
     20261110001000_client_profiles.sql fichas de clientas por estudio (vinculación por email, auditoría sin datos personales)
     20261110001100_brand.sql           marca validada en la base (contraste) + bucket de logos
+    20261110001200_catalog.sql         categorías, servicios, profesionales, asignaciones (claves compuestas) + bucket de fotos
+    20261110001300_schedule.sql        horarios por franjas, bloqueos y app.working_intervals
+    20261110001400_public_catalog.sql  catálogo público (precio "desde", solo lo visible)
+    20261110001500_schedule_rpc.sql    guardar la semana (todo o nada) y bloqueos con hora local
   seed.sql                             SOLO desarrollo: Fresas Studio + Estudio Prueba (idempotente)
 db/
   local/00_supabase_shim.sql           SOLO local: imita auth, roles y Storage de Supabase
   tests/lib/setup.sql, finish.sql      framework común (transacción, asserts, atajos de sesión)
-  tests/01…07_*.sql                    aislamiento, renombre, seed, dominios, equipo, fichas, marca
+  tests/01…11_*.sql                    aislamiento, renombre, seed, dominios, equipo, fichas, marca,
+                                       catálogo, horarios, catálogo público y RPC de horarios
 scripts/
   test-db.sh                           levanta Postgres temporal, migra, siembra y testea (Linux y Windows)
-  e2e-auth.mjs                         pruebas de punta a punta contra la app y Supabase de desarrollo
+  e2e-auth.mjs, e2e-catalog.mjs        pruebas de punta a punta contra la app y Supabase de desarrollo
+  e2e-lib.mjs                          helpers compartidos de los e2e
 ```
 
 ## Levantar la app en local
@@ -58,7 +67,7 @@ scripts/
 |---|---|
 | `http://localhost:3000` | Sitio de Cleo |
 | `http://fresas.localhost:3000` | Sitio de Fresas Studio |
-| `http://fresas.localhost:3000/admin` | Panel de Fresas Studio |
+| `http://fresas.localhost:3000/admin` | Panel de Fresas Studio (Servicios, Profesionales, Horarios, Bloqueos, Equipo, Marca) |
 | `http://estudio-prueba.localhost:3000` | Sitio de Estudio Prueba |
 | `http://admin.localhost:3000` | Cleo Admin |
 
@@ -89,14 +98,15 @@ npm run lint
 
 # De punta a punta, contra la app compilada y el Supabase de DESARROLLO:
 npm run build && npx next start -p 3000   # en otra terminal
-npm run e2e
+npm run e2e           # e2e-auth.mjs y e2e-catalog.mjs
 ```
 
 `test-db.sh` corre todo dentro de una transacción que se descarta, en un Postgres temporal
 propio (puerto 54329) que borra al terminar. Requiere PostgreSQL 15 o superior.
 
-`npm run e2e` crea y limpia lo que usa (invitaciones, membresía de prueba, logo), así que se
-puede repetir. No prueba el login real con Google (ver el checklist manual).
+`npm run e2e` crea y limpia lo que usa (invitaciones, membresía, logo, servicios y profesionales
+de prueba, que se archivan), así que se puede repetir; si una corrida se corta, la siguiente
+archiva lo que quedó. No prueba el login real con Google (ver el checklist manual).
 
 ### `test-db.sh` en Windows
 
@@ -135,6 +145,9 @@ npx supabase@3.1.0 db push --remote=<ref-de-produccion> --dry-run
 npx supabase@3.1.0 db push --remote=<ref-de-produccion>
 ```
 
+- **Si cambia `seed.sql`:** con el seed ya registrado en el proyecto, `db push --include-seed`
+  solo actualiza su huella y **no lo vuelve a ejecutar**. En desarrollo se aplica así (es
+  idempotente): `npx supabase@3.1.0 db query --remote --file supabase/seed.sql --yes`.
 - **No** aplicar `db/local/00_supabase_shim.sql`: Supabase ya trae eso.
 - Superadministradora de producción, desde el SQL editor:
   `insert into public.platform_admins (user_id) values ('<uuid de auth.users>');`
@@ -180,6 +193,19 @@ La pantalla de consentimiento de Google es una sola para todos los estudios y di
 Para producción, agregar en el mismo cliente el URI del proyecto de producción.
 
 ## Checklist manual (lo que el e2e no cubre)
+
+**Sprint 3 — en un celular real (o el navegador en 375 px):**
+- [ ] Crear un servicio con las duraciones rápidas, ver «Se muestra: $ …» mientras escribís el
+      precio, subir una foto y verlo en el sitio.
+- [ ] Ordenar servicios y categorías con subir/bajar; ocultar una categoría y ver que sus
+      servicios salen del sitio.
+- [ ] Crear una profesional sin cuenta, asignarle servicios con «cobra o tarda distinto» y ver el
+      «desde» en el sitio.
+- [ ] Cargar el horario del estudio con descanso al mediodía y «Copiar a martes–viernes».
+- [ ] Darle a una profesional un horario propio y probar uno fuera del horario del estudio.
+- [ ] Cargar un feriado de todo el estudio y vacaciones de una profesional; quitarlos.
+
+**Sprint 2:**
 
 - [ ] **Google:** en `fresas.localhost:3000/ingresar`, "Continuar con Google" muestra
       "Cleo Suite" y vuelve a "Mis datos" de Fresas con nombre y email de la cuenta.
@@ -239,9 +265,23 @@ Para producción, agregar en el mismo cliente el URI del proyecto de producción
   crea una **versión inmutable** para que las reservas guarden cuál aceptó la clienta.
 - Se validan zona horaria, formato de URL, URLs reservadas y emails.
 
+**Servicios, profesionales y horarios**
+- Las referencias usan claves compuestas `(tenant_id, id)`: la base hace imposible asignar a una
+  profesional un servicio, categoría o cuenta de otro estudio, aun sin RLS.
+- Precios en centavos, duraciones y tiempo extra en múltiplos de 5. Servicios y profesionales no
+  se borran (se archivan) y cada cambio de precio queda auditado con el valor anterior y el nuevo.
+- Escriben servicios y profesionales quienes tienen `services.manage`; el horario del estudio,
+  `settings.manage`; horarios de profesionales y bloqueos, `agenda.manage`. Las profesionales
+  solo miran. Cleo Admin no ve nada de esto.
+- Franjas sin superposición (restricción de exclusión) y las de una profesional siempre dentro
+  del horario del estudio. `app.working_intervals` calcula cuándo atiende cada una (descansos,
+  bloqueos y zona horaria del estudio): es la base de la disponibilidad de reservas.
+- El catálogo público muestra solo lo activo y visible, con «desde» cuando corresponde, y no
+  expone cuentas, tiempo extra ni seña.
+
 **Auditoría**
 - Se registra quién hizo cada cambio en estudios, configuración, roles, membresías,
-  invitaciones, dominios y fichas.
+  invitaciones, dominios, fichas, servicios, profesionales, horarios y bloqueos.
 - Es de solo agregado: nadie puede editarla ni borrarla, ni siquiera el superusuario.
 
 ## Decisiones tomadas
@@ -271,6 +311,10 @@ Para producción, agregar en el mismo cliente el URI del proyecto de producción
 - **Backups y monitoreo (ARC-09):** se configuran en Supabase (PITR) y Vercel.
 - **Rol Profesional:** hoy tiene `clients.read` y ve todas las clientas del estudio; con la
   agenda conviene limitarlo a sus propias clientas.
+- **Reservas (próximo):** cada turno tiene que guardar una foto de lo acordado (nombre,
+  duración, tiempo extra, precio, seña y versión de política) para que un cambio de precio no
+  altere turnos existentes, y la disponibilidad sale de `app.working_intervals` menos los turnos.
+  Al bloquear un día con turnos, avisar antes de guardar.
 
 ## Pendientes técnicos
 
