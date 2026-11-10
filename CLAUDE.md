@@ -13,7 +13,8 @@ sitio público de cada estudio, Cleo Manager (panel del estudio) y Cleo Admin
   (`components.json`, componentes en `src/components/ui`, alias `@/*`).
 - Supabase: PostgreSQL + Auth + Storage. Migraciones en `supabase/migrations/`.
 - Mercado Pago (OAuth por estudio), Resend, Vercel.
-- Comandos: `npm run dev`, `npm run build`, `npm run lint`, `./scripts/test-db.sh` (tests de BD).
+- Comandos: `npm run dev`, `npm run build`, `npm run lint`, `npm test` (Vitest),
+  `./scripts/test-db.sh` (tests de BD) y `npm run e2e` (contra `next start` y Supabase de desarrollo).
 
 ## Regla 1 — Multi-tenant: ningún estudio ve datos de otro
 
@@ -23,8 +24,25 @@ sitio público de cada estudio, Cleo Manager (panel del estudio) y Cleo Admin
   a través de funciones como `get_public_studio(slug)`, sin ids internos.
 - Nunca confiar en un `tenant_id` enviado por el navegador: el servidor lo deriva de la
   sesión/membresía y la base lo vuelve a validar con RLS.
-- Cleo Admin **no** tiene acceso por defecto a clientas, turnos ni caja de los estudios.
+- Cleo Admin **no** tiene acceso a clientas, turnos ni caja de los estudios. Tampoco por
+  `audit_logs`: las tablas con datos personales usan auditoría sin valores (ver `client_profiles`).
 - Los estudios no se borran: se suspenden o cancelan. Suspender = solo lectura.
+
+## Regla 1b — Hosts, estudio actual y marca blanca
+
+- El estudio sale **siempre del host** (`src/proxy.ts` + `src/lib/host.ts`): `{slug}.<raíz>` →
+  `/sites/[site]/…`, `admin.<raíz>` → `/platform/…`. Las rutas internas no se piden directo.
+- En Server Actions y Route Handlers, usar `currentStudio()` / `currentStaff()`
+  (`src/lib/request.ts`, `src/lib/auth.ts`); nunca un slug o `tenant_id` del formulario.
+- El proxy no autoriza: cada página del panel llama a `requireStaff` / `requirePermission`, y
+  cada acción vuelve a verificar con `currentStaff()` + `can()`.
+- **Marca blanca:** en todo lo que cuelga de `/sites/[site]` no aparece "Cleo" (textos,
+  títulos, errores, 404, íconos). "Cleo" solo en el dominio raíz, Cleo Admin y la pantalla de
+  Google ("Cleo Suite").
+- Contenido cargado por un estudio se renderiza escapado (sin `dangerouslySetInnerHTML`): el
+  sitio público y el panel comparten origen y cookies.
+- Colores: solo hex validados (`src/lib/brand.ts`, y `app.validate_brand` en la base). El
+  contraste se controla con tests (`theme.test.ts`); el dorado/acento nunca es texto chico.
 
 ## Regla 2 — RLS obligatoria en cada tabla nueva
 
@@ -74,7 +92,10 @@ El frontend **muestra** importes y consecuencias; el servidor/base **decide**.
 - Server Components por defecto; `"use client"` solo cuando hace falta interactividad.
 - Operaciones sensibles en Server Actions / Route Handlers que llaman RPC; marcar módulos
   con `import "server-only"` cuando manejen secretos o lógica de dinero.
-- Validar toda entrada en el servidor (p. ej. con zod) aunque la UI ya valide.
+- Validar toda entrada en el servidor (p. ej. con zod) aunque la UI ya valide. Redirecciones
+  con `safeNext()`. Mostrar al usuario solo mensajes de error escritos por nosotros.
+- Next 16: `middleware` se llama `proxy`; `cacheComponents` está desactivado a propósito.
+  Antes de usar APIs de Next, leer `node_modules/next/dist/docs/`.
 - Nada de pantallas de demostración con datos ficticios presentadas como funcionales: cada
   botón y formulario se conecta a una operación real.
 - UI mobile-first, en español rioplatense, mensajes de error comprensibles.

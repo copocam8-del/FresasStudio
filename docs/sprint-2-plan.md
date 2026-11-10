@@ -1,7 +1,7 @@
 # Sprint 2 — Plan: Cleo, subdominios y acceso
 
-> Estado: **aprobado** con las decisiones D1–D7 (10/11/2026). Se implementa por partes,
-> con un commit por parte y los tests en verde en cada paso.
+> Estado: **implementado** (10/11/2026), pasos 1 a 10. Queda la verificación manual del
+> checklist del README (Google, emails reales, celular) y la configuración de Auth en Supabase.
 
 ## Contexto y decisiones de producto
 

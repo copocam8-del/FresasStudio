@@ -1,21 +1,29 @@
 # Cleo — plataforma SaaS para estudios de belleza
 
-**Cleo** es una plataforma multi-tenant y de marca blanca: cada estudio tiene su sitio
-(`{slug}.cleo.com.ar`) y su panel (Cleo Manager), y la plataforma se administra desde
-Cleo Admin. **Fresas Studio** (`fresas`) es el primer estudio cliente.
+**Cleo** es una plataforma multi-tenant y de **marca blanca**: cada estudio tiene su sitio
+(`{slug}.cleo.com.ar`) y su panel (Cleo Manager, en `{slug}.cleo.com.ar/admin`), y la
+plataforma se administra desde Cleo Admin (`admin.cleo.com.ar`). En el sitio y el panel de
+un estudio se ve solo su nombre, sus colores y su logo; nunca "Cleo".
+**Fresas Studio** (`fresas`) es el primer estudio cliente.
 
-## Sprint 1: base de datos multi-tenant
-
-Base de datos de la plataforma (PostgreSQL / Supabase) con aislamiento entre estudios,
-roles y permisos, invitaciones, auditoría y una suite de tests que lo demuestran.
-El plan del Sprint 2 está en [`docs/sprint-2-plan.md`](docs/sprint-2-plan.md).
-
-Cubre del backlog: **ARC-05, ARC-06, ARC-07, ARC-10, AUTH-03, AUTH-04, TEN-01, TEN-05, TEN-06**
-y la base de **SAAS-02** (alta y suspensión de estudios).
+- Sprint 1: base de datos multi-tenant (estudios, roles, permisos, invitaciones, auditoría).
+- Sprint 2 ([plan](docs/sprint-2-plan.md)): renombre a Cleo, subdominios, acceso del equipo,
+  clientas con Google, fichas por estudio y marca de cada estudio.
 
 ## Estructura
 
 ```
+src/
+  proxy.ts                     enruta por host (subdominio → estudio) y refresca la sesión
+  app/
+    page.tsx                   sitio de Cleo (dominio raíz)
+    platform/                  Cleo Admin (admin.<raíz>): login y acceso de superadmins
+    sites/[site]/              sitio de cada estudio (rewrite desde {slug}.<raíz>)
+      page.tsx                 página pública con su marca
+      ingresar/ auth/callback/ mi-ficha/   clientas: Google y sus datos
+      admin/                   panel del estudio: login, recuperar, restablecer, invitación,
+                               inicio, equipo (invitar con link), marca (colores y logo)
+  lib/                         host, auth (DAL), validación, color/contraste, marca, Supabase
 supabase/
   migrations/
     20261110000100_foundation.sql      estudios, configuración, políticas versionadas, perfiles, superadmins
@@ -26,30 +34,71 @@ supabase/
     20261110000600_function_search_path.sql  search_path = '' en las funciones que no lo fijaban
     20261110000700_cleo_rename.sql     renombre a Cleo: slugs reservados, "fresas" liberado, mensajes
     20261110000800_tenant_domains.sql  dominios propios (preparación): tabla, RLS, resolución y RPC de Cleo Admin
-  seed.sql                             SOLO desarrollo: Fresas Studio + Estudio Prueba
+    20261110000900_team_auth.sql       vista previa de invitación, email confirmado, equipo con emails
+    20261110001000_client_profiles.sql fichas de clientas por estudio (vinculación por email, auditoría sin datos personales)
+    20261110001100_brand.sql           marca validada en la base (contraste) + bucket de logos
+  seed.sql                             SOLO desarrollo: Fresas Studio + Estudio Prueba (idempotente)
 db/
-  local/00_supabase_shim.sql           SOLO local: imita auth.uid() y roles de Supabase
+  local/00_supabase_shim.sql           SOLO local: imita auth, roles y Storage de Supabase
   tests/lib/setup.sql, finish.sql      framework común (transacción, asserts, atajos de sesión)
-  tests/01_isolation_and_permissions.sql
-  tests/02_cleo_rename.sql
-  tests/03_dev_seed.sql
-  tests/04_tenant_domains.sql
-scripts/test-db.sh                     levanta Postgres temporal, migra, siembra y testea (Linux y Windows)
+  tests/01…07_*.sql                    aislamiento, renombre, seed, dominios, equipo, fichas, marca
+scripts/
+  test-db.sh                           levanta Postgres temporal, migra, siembra y testea (Linux y Windows)
+  e2e-auth.mjs                         pruebas de punta a punta contra la app y Supabase de desarrollo
 ```
 
-## Cómo correr los tests
+## Levantar la app en local
 
-Requiere PostgreSQL 15 o superior instalado (`initdb`, `pg_ctl`, `psql`).
+1. `npm install`
+2. Copiar `.env.example` a `.env.local` y completarlo con el proyecto de **desarrollo**
+   (URL, clave publishable y `NEXT_PUBLIC_ROOT_DOMAIN=localhost:3000`).
+3. `npm run dev` y abrir en Chrome, Edge o Firefox:
+
+| URL | Qué es |
+|---|---|
+| `http://localhost:3000` | Sitio de Cleo |
+| `http://fresas.localhost:3000` | Sitio de Fresas Studio |
+| `http://fresas.localhost:3000/admin` | Panel de Fresas Studio |
+| `http://estudio-prueba.localhost:3000` | Sitio de Estudio Prueba |
+| `http://admin.localhost:3000` | Cleo Admin |
+
+Los navegadores resuelven `*.localhost` solos. Cada subdominio tiene sus propias cookies,
+igual que en producción: iniciar sesión en Fresas no abre sesión en otro estudio.
+
+En Windows, Node, `curl` y otras herramientas de terminal **no** resuelven `*.localhost`.
+Para probar desde la terminal: `curl -H "Host: fresas.localhost:3000" http://localhost:3000/`
+(o agregar entradas en `C:\Windows\System32\drivers\etc\hosts`).
+
+**Usuarias de prueba** (seed, contraseña `CleoDev-2026`, solo desarrollo):
+
+| Email | Rol |
+|---|---|
+| `admin@cleo.test` | Cleo Admin |
+| `duena@fresasstudio.test` | Dueña de Fresas Studio |
+| `encargada@fresasstudio.test` | Encargada de Fresas Studio |
+| `profesional@fresasstudio.test` | Profesional de Fresas Studio |
+| `duena@estudioprueba.test` | Dueña de Estudio Prueba |
+| `externa@otro.test` | Sin estudio (para probar invitaciones) |
+
+## Tests
 
 ```bash
-./scripts/test-db.sh
-# … un resumen por archivo, p. ej. «93 tests · 93 ok · 0 fallidos»
+npm test              # unitarios (Vitest): host, validación, contraste del tema y de marcas, contacto
+npm run lint
+./scripts/test-db.sh  # base de datos: un resumen por archivo («38 tests · 38 ok · 0 fallidos»)
+
+# De punta a punta, contra la app compilada y el Supabase de DESARROLLO:
+npm run build && npx next start -p 3000   # en otra terminal
+npm run e2e
 ```
 
-Corre todo dentro de una transacción que se descarta y no toca ninguna base existente.
-Levanta un Postgres temporal propio en el puerto 54329 y lo borra al terminar.
+`test-db.sh` corre todo dentro de una transacción que se descarta, en un Postgres temporal
+propio (puerto 54329) que borra al terminar. Requiere PostgreSQL 15 o superior.
 
-### En Windows
+`npm run e2e` crea y limpia lo que usa (invitaciones, membresía de prueba, logo), así que se
+puede repetir. No prueba el login real con Google (ver el checklist manual).
+
+### `test-db.sh` en Windows
 
 1. Instalar PostgreSQL con el instalador oficial (https://www.postgresql.org/download/windows/).
    No hace falta agregarlo al PATH: el script busca la versión más nueva en
@@ -87,10 +136,65 @@ npx supabase@3.1.0 db push --remote=<ref-de-produccion>
 ```
 
 - **No** aplicar `db/local/00_supabase_shim.sql`: Supabase ya trae eso.
-- El seed crea usuarias `.test` que pueden iniciar sesión con email y contraseña
-  (contraseña de desarrollo: `CleoDev-2026`). Es pública a propósito: nunca va a producción.
 - Superadministradora de producción, desde el SQL editor:
   `insert into public.platform_admins (user_id) values ('<uuid de auth.users>');`
+
+### Configuración de Auth (en el panel de Supabase, por entorno)
+
+**Authentication → URL Configuration**
+
+| | Desarrollo | Producción |
+|---|---|---|
+| Site URL | `http://localhost:3000` | `https://cleo.com.ar` |
+| Redirect URLs | `http://*.localhost:3000/**` | `https://*.cleo.com.ar/**` (y cada dominio propio) |
+
+Sin esto no funcionan los links de recuperación de contraseña, la confirmación de cuenta ni
+la vuelta de Google.
+
+**Authentication → Sign In / Providers**
+- Email: confirmación de email **activada**, largo mínimo de contraseña 10.
+- Google: activado con el cliente OAuth "Cleo Suite" (abajo).
+
+**Emails:** el SMTP que trae Supabase tiene un límite muy bajo y solo envía a los miembros
+de la organización de Supabase. Alcanza para probar con tu propio email; antes de invitar a
+gente real hay que configurar SMTP propio (Resend) en **Authentication → Emails → SMTP**.
+
+### Cliente OAuth de Google ("Cleo Suite")
+
+La pantalla de consentimiento de Google es una sola para todos los estudios y dice
+"Cleo Suite"; el resto de la app muestra el nombre de cada estudio.
+
+1. En https://console.cloud.google.com crear un proyecto `Cleo Suite` y dejarlo seleccionado.
+2. **APIs y servicios → Pantalla de consentimiento de OAuth** (o **Google Auth Platform**):
+   nombre `Cleo Suite`, email de asistencia y de contacto, público **Externo**.
+3. **Acceso a los datos / Permisos:** solo `openid`, `email` y `profile`.
+4. En modo **Prueba** solo entran los **Usuarios de prueba** cargados. Para abrirlo a todo
+   el mundo: **Publicar app**.
+5. **Clientes → Crear cliente** (o **Credenciales → ID de cliente de OAuth**), tipo
+   **Aplicación web**, con este **URI de redireccionamiento autorizado**:
+   `https://<ref-del-proyecto>.supabase.co/auth/v1/callback`
+   (desarrollo: `https://bitfpryusoonfbgdtxkg.supabase.co/auth/v1/callback`).
+6. Copiar ID y secreto del cliente en Supabase → **Authentication → Sign In / Providers →
+   Google** y guardar. El secreto no se comparte por chat ni se sube al repo.
+
+Para producción, agregar en el mismo cliente el URI del proyecto de producción.
+
+## Checklist manual (lo que el e2e no cubre)
+
+- [ ] **Google:** en `fresas.localhost:3000/ingresar`, "Continuar con Google" muestra
+      "Cleo Suite" y vuelve a "Mis datos" de Fresas con nombre y email de la cuenta.
+- [ ] **Google en dos estudios:** la misma cuenta en `estudio-prueba.localhost:3000/ingresar`
+      tiene otra ficha, independiente.
+- [ ] **Vinculación (D7):** una ficha cargada por el estudio con tu Gmail (sin cuenta) se
+      vincula sola en tu primer ingreso con Google.
+- [ ] **Recuperar contraseña:** con un email propio miembro de la organización de Supabase,
+      llega el email, el link abre "Contraseña nueva" en el mismo navegador y se puede ingresar
+      con la nueva.
+- [ ] **Invitación con cuenta nueva:** crear la cuenta desde el link, confirmar el email,
+      aceptar y entrar al panel.
+- [ ] **Marca:** cambiar colores y logo en `/admin/marca` y verlos en el sitio, el panel, las
+      pantallas de ingreso y el ícono de la pestaña; ver los avisos de contraste en vivo.
+- [ ] **Celular:** sitio, login, invitación y "Mis datos" se usan cómodos en 375 px de ancho.
 
 ## Qué garantiza la base (y está testeado)
 
@@ -114,53 +218,68 @@ npx supabase@3.1.0 db push --remote=<ref-de-produccion>
 
 **Invitaciones**
 - El token se muestra una sola vez; en la base solo queda su hash SHA-256.
-- Solo sirve para el email al que se envió: vencen a los 7 días (14 para la dueña) y son
-  de un solo uso.
+- Solo sirve para el email al que se envió, con el email **confirmado**: vencen a los 7 días
+  (14 para la dueña) y son de un solo uso.
+- La vista previa del link muestra estudio, rol y email enmascarado; nunca ids.
 
-**Estudios y políticas**
+**Clientas**
+- Una cuenta (Google) y una ficha **por estudio**. La ve la propia clienta y el equipo con
+  `clients.read`; Cleo Admin no.
+- Una ficha cargada por el estudio se vincula al primer ingreso solo si el email coincide
+  exacto y no tenía usuaria.
+- La auditoría de fichas registra qué campos cambiaron, nunca nombres, emails ni teléfonos.
+
+**Estudios, marca y políticas**
 - Solo Cleo Admin crea estudios, cambia su URL o los suspende. Suspender no borra nada:
   el estudio queda en solo lectura y su página pública se oculta.
-- Seña 50% y ventana de 48 h por defecto, configurables por estudio.
-- Cada cambio de seña o de política crea una **versión inmutable**. Así, las reservas
-  (sprint 2) podrán guardar qué versión aceptó la clienta (POL-08).
+- Los colores de marca se validan en la base con las mismas reglas de contraste que la app
+  (texto ≥ 4.5:1; botones y acentos ≥ 3:1). Los logos solo PNG/JPEG/WebP de hasta 1 MB, en
+  la carpeta del propio estudio.
+- Seña 50% y ventana de 48 h por defecto, configurables por estudio. Cada cambio de política
+  crea una **versión inmutable** para que las reservas guarden cuál aceptó la clienta.
 - Se validan zona horaria, formato de URL, URLs reservadas y emails.
 
 **Auditoría**
-- Se registra quién hizo cada cambio en estudios, configuración, roles, membresías e
-  invitaciones.
+- Se registra quién hizo cada cambio en estudios, configuración, roles, membresías,
+  invitaciones, dominios y fichas.
 - Es de solo agregado: nadie puede editarla ni borrarla, ni siquiera el superusuario.
 
-## Decisiones tomadas en este sprint
+## Decisiones tomadas
 
 | Tema | Decisión |
 |---|---|
-| Identificación del tenant | Por `slug` en la URL pública y por membresía en el panel. La forma final del dominio (ruta, subdominio o propio) sigue pendiente, pero no cambia el esquema. |
+| Identificación del estudio | Por host: `{slug}.cleo.com.ar` (y más adelante dominios propios en `tenant_domains`). El estudio siempre sale del host, nunca de un dato del formulario. |
+| Panel del estudio | En `{slug}.cleo.com.ar/admin`. Quien trabaja en dos estudios inicia sesión en cada uno. |
+| Cuentas de clientas | Una identidad de login (Google) con una ficha separada por estudio. |
 | Operaciones sensibles | Por funciones de base de datos (RPC) que validan permisos adentro. La interfaz nunca decide. |
-| Cleo Admin y datos del estudio | Puede ver estudios, configuración y equipos (para soporte). **No** tendrá acceso por defecto a clientas, turnos ni caja cuando se agreguen. |
-| Borrado | Los estudios no se borran: solo se suspenden o cancelan. |
+| Cleo Admin y datos del estudio | Puede ver estudios, configuración y equipos (para soporte). **No** tiene acceso a clientas, turnos ni caja. |
+| Borrado | Los estudios no se borran: solo se suspenden o cancelan. Las fichas se archivan. |
 
-## Pendiente (no entró en este sprint)
+## Pendiente
 
-- **Crear los proyectos de Supabase (ARC-03/04):** uno para staging y otro para producción;
-  requiere tu cuenta. Después, aplicar las migraciones como indica "Cómo aplicarlo en
-  Supabase" y validarlas contra un proyecto real.
-- **Pantallas de login, recuperación y aceptación de invitación (AUTH-01/02):** las provee
-  Supabase Auth; falta conectarlas al frontend.
-- **Envío del email de invitación:** el backend recibe el token y lo envía con Resend.
+- **Proyecto Supabase de producción:** el proyecto actual (`bitfpryusoonfbgdtxkg`) es el de
+  desarrollo. Antes de lanzar hay que crear uno nuevo, aplicarle las migraciones **sin seed**,
+  configurar Auth (URLs, Google, SMTP) y cargar sus variables en Vercel. Conviene renombrar el
+  actual a `cleo-dev` en el panel de Supabase.
+- **Dominio `cleo.com.ar`:** registrarlo y, en Vercel, delegar sus nameservers (el comodín
+  `*.cleo.com.ar` no funciona con un CNAME).
+- **SMTP propio (Resend)** para los emails de Auth, y envío del email de invitación (hoy la
+  invitación es un link que la dueña manda por WhatsApp).
+- **Dominios propios de estudios:** la tabla y la resolución ya existen; falta la
+  verificación DNS, el alta en Vercel y las pantallas de Cleo Admin.
+- **Pantallas de Cleo Admin** (estudios, planes, módulos) y **límites por plan (SAAS-04)**.
 - **Backups y monitoreo (ARC-09):** se configuran en Supabase (PITR) y Vercel.
-- **Módulos y límites por plan (SAAS-04):** el esquema ya deja lugar para `tenant_entitlements`.
+- **Rol Profesional:** hoy tiene `clients.read` y ve todas las clientas del estudio; con la
+  agenda conviene limitarlo a sus propias clientas.
 
 ## Pendientes técnicos
 
-- **Proyecto Supabase de producción:** el proyecto actual (`bitfpryusoonfbgdtxkg`) es el de
-  desarrollo. Antes de lanzar hay que crear uno nuevo para producción, aplicarle las
-  migraciones **sin seed**, configurar Auth (URLs, Google, SMTP) y cargar sus variables en
-  Vercel. Conviene renombrar el actual a `cleo-dev` en el panel de Supabase.
 - **`cacheComponents` desactivado** (`next.config.ts`): el sitio y el panel de cada estudio
   dependen del host, la base y la sesión, y así los 404 y las redirecciones de login son HTTP
   reales. Next anuncia que en su próxima versión mayor la opción deja de existir: al
   actualizar habrá que adaptar esas rutas (Suspense / `use cache: private`).
-
+- **Caché del CDN de Storage:** al quitar un logo, su URL pública puede seguir respondiendo un
+  rato. Cada logo nuevo usa un nombre único, así que nunca se muestra uno viejo en su lugar.
 - **Vulnerabilidad de `minimatch` en dependencias de desarrollo:** `npm audit` reporta
   `minimatch` < 11.0.1 ([GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249)),
   que entra por `typescript-eslint` (vía `eslint-config-next`) y por `ts-morph` (vía la CLI de
@@ -169,10 +288,3 @@ npx supabase@3.1.0 db push --remote=<ref-de-produccion>
   Cuando `typescript-eslint` y `ts-morph` acepten `minimatch` 11, correr `npm update`,
   confirmar con `npm audit` y verificar que `npm run lint` y `npm run build` sigan pasando.
   No usar `npm audit fix --force`: propone bajar `shadcn` a la 1.0.0.
-
-## Decisión que conviene definir antes del sprint 2
-
-**¿La cuenta de una clienta es una sola para todos los estudios, o cada estudio tiene su
-propia ficha?** Define cómo se modelan `client_profiles` y quién ve qué. La recomendación es
-una identidad global de login con una **ficha separada por estudio**. Así cada estudio ve
-solo su historial y la clienta reserva en varios estudios con una sola cuenta.
