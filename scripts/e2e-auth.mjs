@@ -2,8 +2,6 @@
 // Requiere: `npm run build && npx next start -p 3000` apuntando al Supabase de DESARROLLO
 // con el seed aplicado. Uso: node scripts/e2e-auth.mjs
 
-// E2E de acceso del equipo contra next start + Supabase de desarrollo.
-const BASE = "http://localhost:3000";
 const PASS = "CleoDev-2026";
 let fails = 0;
 const ok = (cond, msg) => { console.log(`${cond ? "ok  " : "FAIL"}  ${msg}`); if (!cond) fails++; };
@@ -125,6 +123,76 @@ r = await req(F, "/");
 ok(r.status === 200 && r.html.includes("Fresas Studio") && !/Cleo/.test(r.html), "sitio público de Fresas: 200, con su nombre y sin Cleo");
 r = await req("no-existe.localhost:3000", "/");
 ok(r.status === 404, `estudio inexistente → 404 real (HTTP ${r.status})`);
+
+// ---------------------------------------------------------------------
+// Equipo e invitación de punta a punta (con limpieza al final)
+// ---------------------------------------------------------------------
+const owner = sess;
+r = await req(F, "/admin/equipo", { cookies: owner });
+ok(r.status === 200 && /Personas \((<!-- -->)?3(<!-- -->)?\)/.test(r.html), "equipo: la dueña ve a las 3 personas");
+ok(r.html.includes("Crear link de invitación"), "equipo: la dueña ve el formulario de invitación");
+const roleId = /<option value="([0-9a-f-]{36})"[^>]*>Recepción<\/option>/.exec(r.html)?.[1];
+ok(Boolean(roleId), "equipo: el rol Recepción está entre los que puede asignar");
+
+r = await req(F, "/admin/equipo", { cookies: pro });
+ok(r.status === 404, `equipo: una profesional (sin team.read) → 404 (HTTP ${r.status})`);
+
+async function invite(email) {
+  const page = await req(F, "/admin/equipo", { cookies: owner });
+  const fd = formFields(page.html, 'name="role_id"');
+  fd.append("email", email);
+  fd.append("role_id", roleId);
+  return req(F, "/admin/equipo", { method: "POST", body: fd, cookies: owner });
+}
+
+r = await invite("duena@fresasstudio.test");
+ok(r.html.includes("Esa persona ya forma parte del estudio"), "invitar a alguien que ya está: mensaje claro");
+
+r = await invite("externa@otro.test");
+const token = /invitacion\?token=([0-9a-f]{64})/.exec(r.html)?.[1];
+ok(Boolean(token) && r.html.includes("una sola vez"), "invitar: genera el link y avisa que se muestra una sola vez");
+ok(r.html.includes("wa.me/?text="), "invitar: ofrece enviarlo por WhatsApp");
+
+r = await req(E, `/admin/invitacion?token=${token}`);
+ok(r.html.includes("es de otro estudio"), "el link abierto en otro estudio: «es de otro estudio»");
+
+r = await req(F, `/admin/invitacion?token=${token}`);
+ok(r.html.includes("Recepción") && r.html.includes("e***@otro.test") && r.html.includes("Crear cuenta"),
+   "invitación sin sesión: muestra rol, email enmascarado y crear cuenta");
+ok(r.html.includes('name="referrer" content="no-referrer"'), "invitación: el token no viaja como Referer");
+
+r = await login(F, "externa@otro.test", PASS, `/admin/invitacion?token=${token}`);
+const ext = Object.fromEntries(Object.entries(r.set).filter(([k, v]) => k.startsWith("sb-") && v));
+ok(r.status === 303 && r.location === `/admin/invitacion?token=${token}`,
+   "quien todavía no es del equipo puede ingresar para aceptar");
+
+r = await req(F, `/admin/invitacion?token=${token}`, { cookies: ext });
+ok(r.html.includes("Aceptar invitación") && r.html.includes("externa@otro.test"), "con sesión: botón para aceptar");
+const acceptFd = formFields(r.html, "Aceptar invitación");
+r = await req(F, `/admin/invitacion?token=${token}`, { method: "POST", body: acceptFd, cookies: ext });
+ok(r.status === 303 && r.location === "/admin", `aceptar → 303 /admin (HTTP ${r.status})`);
+r = await req(F, "/admin", { cookies: ext });
+ok(r.status === 200 && r.html.includes("Recepción"), "después de aceptar entra al panel como Recepción");
+r = await req(F, `/admin/invitacion?token=${token}`);
+ok(r.html.includes("ya se usó"), "el link no sirve dos veces");
+
+// Limpieza: la dueña da de baja a la persona (por la API, con RLS) para poder repetir.
+const { readFileSync } = await import("node:fs");
+const { createClient } = await import("@supabase/supabase-js");
+const env = Object.fromEntries(
+  readFileSync(".env.local", "utf8").split(/\r?\n/).filter((l) => /^[A-Z_]+=/.test(l))
+    .map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1)]),
+);
+const sb = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
+  auth: { persistSession: false },
+});
+await sb.auth.signInWithPassword({ email: "duena@fresasstudio.test", password: PASS });
+const team = await sb.rpc("team_members", { p_tenant: "10000000-0000-4000-a000-000000000001" });
+const extId = team.data?.find((m) => m.email === "externa@otro.test")?.membership_id;
+const baja = await sb.from("memberships").update({ status: "revoked" }).eq("id", extId).select("id");
+ok(!baja.error && baja.data?.length === 1, "limpieza: la persona invitada queda dada de baja");
+r = await req(F, "/admin", { cookies: ext });
+ok(r.status === 404, `después de la baja pierde el acceso al instante (HTTP ${r.status})`);
 
 console.log(fails ? `\n${fails} FALLARON` : "\nTodo ok");
 process.exit(fails ? 1 : 0);

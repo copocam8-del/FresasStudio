@@ -2,6 +2,7 @@ import "server-only";
 import type { User } from "@supabase/supabase-js";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
+import { currentStudio } from "@/lib/request";
 import { getStudio, type PublicStudio } from "@/lib/studio";
 import { serverSupabase } from "@/lib/supabase/server";
 
@@ -82,3 +83,13 @@ export const isPlatformAdmin = cache(async (): Promise<boolean> => {
   if (error) throw new Error(`No se pudo verificar Cleo Admin: ${error.message}`);
   return Boolean(data);
 });
+
+/**
+ * Para Server Actions del panel: la persona y su membresía en el estudio del HOST
+ * actual (nunca de un campo del formulario). null si no hay sesión o no es del equipo.
+ */
+export async function currentStaff(): Promise<StaffContext | null> {
+  const studio = await currentStudio();
+  if (!studio) return null;
+  return getStaffContext(studio.slug);
+}
