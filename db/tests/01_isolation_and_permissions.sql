@@ -308,10 +308,25 @@ select tests.ok((select count(*) = 0 from information_schema.role_table_grants
 select tests.ok((select count(*) = 0 from information_schema.column_privileges
                  where grantee = 'anon' and table_schema = 'public'),
                 'meta: anon no tiene privilegios sobre ninguna columna');
-select tests.ok((select count(*) = 0 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-                 where n.nspname in ('public', 'app') and p.prosecdef
-                   and not exists (select 1 from unnest(coalesce(p.proconfig, '{}')) cfg where cfg like 'search_path=%')),
-                'meta: toda función SECURITY DEFINER fija su search_path');
+-- Todas las funciones propias (SECURITY DEFINER o INVOKER, incluidos triggers) fijan
+-- search_path = '' y nombran cada objeto con su esquema. Se excluyen las que pertenecen
+-- a extensiones, que no controlamos. Si falla, la lista de funciones queda en el nombre.
+create view tests.unpinned_functions as
+  select n.nspname || '.' || p.proname as fn
+  from pg_proc p
+  join pg_namespace n on n.oid = p.pronamespace
+  where n.nspname in ('public', 'app')
+    and not exists (select 1 from pg_depend d
+                    where d.classid = 'pg_proc'::regclass and d.objid = p.oid and d.deptype = 'e')
+    and not ('search_path=""' = any (coalesce(p.proconfig, '{}')));
+
+select tests.ok(
+  not exists (select 1 from tests.unpinned_functions),
+  'meta: toda función de public y app fija search_path = ''''' ||
+  coalesce(' (sin fijar: ' || (select string_agg(fn, ', ' order by fn) from tests.unpinned_functions) || ')', ''));
+select tests.ok((select count(*) >= 30 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+                 where n.nspname in ('public', 'app')),
+                'meta: el chequeo de search_path realmente ve las funciones de public y app');
 select tests.ok((select count(*) = 0 from information_schema.columns c
                  join pg_class t on t.relname = c.table_name
                  join pg_namespace n on n.oid = t.relnamespace and n.nspname = c.table_schema
