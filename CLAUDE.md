@@ -12,9 +12,21 @@ sitio público de cada estudio, Cleo Manager (panel del estudio) y Cleo Admin
 - Next.js (App Router, `src/`), React, TypeScript estricto, Tailwind CSS v4, shadcn/ui
   (`components.json`, componentes en `src/components/ui`, alias `@/*`).
 - Supabase: PostgreSQL + Auth + Storage. Migraciones en `supabase/migrations/`.
-- Mercado Pago (OAuth por estudio), Resend, Vercel.
+- Mercado Pago (OAuth por estudio), Resend, Render (ver "Infraestructura").
 - Comandos: `npm run dev`, `npm run build`, `npm run lint`, `npm test` (Vitest),
   `./scripts/test-db.sh` (tests de BD) y `npm run e2e` (contra `next start` y Supabase de desarrollo).
+
+## Infraestructura
+
+- **Hosting: Render** (Web Service con `next start`), **no Vercel**. Las variables de entorno y
+  claves de servidor se cargan en el Web Service de Render. Dominio comodín `*.cleo.com.ar`
+  (más `cleo.com.ar` y `admin.cleo.com.ar`) apuntando a Render; **el dominio todavía no está
+  comprado**. La dirección `*.onrender.com` del servicio se trata como el dominio raíz.
+- **Supabase de desarrollo** = el proyecto actual (`bitfpryusoonfbgdtxkg`, región Oregon).
+  **Producción** = un proyecto nuevo en **São Paulo**, que se crea antes del lanzamiento.
+- **Emails con Resend**, más adelante (SMTP de Auth e invitaciones).
+- Tareas periódicas: `pg_cron` (+ `pg_net` para llamar a la app) en Supabase, no los cron jobs
+  de Render.
 
 ## Regla 1 — Multi-tenant: ningún estudio ve datos de otro
 

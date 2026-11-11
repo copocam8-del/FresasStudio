@@ -21,10 +21,10 @@ describe("normalizeHost", () => {
 });
 
 describe("classifyHost (producción)", () => {
-  it("dominio raíz, www y previews de Vercel → sitio de Cleo", () => {
+  it("dominio raíz, www y la dirección de Render → sitio de Cleo", () => {
     expect(classifyHost("cleo.com.ar", PROD)).toEqual({ kind: "root" });
     expect(classifyHost("www.cleo.com.ar", PROD)).toEqual({ kind: "root" });
-    expect(classifyHost("cleo-git-main-x.vercel.app", PROD)).toEqual({ kind: "root" });
+    expect(classifyHost("cleo-web.onrender.com", PROD)).toEqual({ kind: "root" });
   });
 
   it("admin.cleo.com.ar → Cleo Admin", () => {

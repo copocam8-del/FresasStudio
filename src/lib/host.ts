@@ -1,7 +1,7 @@
 /**
  * Clasificación del host de cada request (función pura, sin acceso a la base).
  *
- *   cleo.com.ar · www.cleo.com.ar · *.vercel.app  → sitio de Cleo
+ *   cleo.com.ar · www.cleo.com.ar · *.onrender.com → sitio de Cleo
  *   admin.cleo.com.ar                             → Cleo Admin (plataforma)
  *   {slug}.cleo.com.ar                            → sitio del estudio (y su panel en /admin)
  *   cualquier otro dominio válido                 → posible dominio propio de un estudio
@@ -56,7 +56,8 @@ export function classifyHost(rawHost: string | null | undefined, rawRoot: string
   if (!host || !root) return { kind: "invalid" };
 
   if (host === root || host === `www.${root}`) return { kind: "root" };
-  if (host.endsWith(".vercel.app")) return { kind: "root" };
+  // Dirección propia del Web Service en Render (sin el dominio comodín).
+  if (host.endsWith(".onrender.com")) return { kind: "root" };
   if (host === `${PLATFORM_SUBDOMAIN}.${root}`) return { kind: "platform" };
 
   if (host.endsWith(`.${root}`)) {

@@ -357,16 +357,16 @@ Para producción, agregar en el mismo cliente el URI del proyecto de producción
 
 - **Proyecto Supabase de producción:** el proyecto actual (`bitfpryusoonfbgdtxkg`) es el de
   desarrollo. Antes de lanzar hay que crear uno nuevo, aplicarle las migraciones **sin seed**,
-  configurar Auth (URLs, Google, SMTP) y cargar sus variables en Vercel. Conviene renombrar el
+  configurar Auth (URLs, Google, SMTP) y cargar sus variables en el Web Service de Render. Conviene renombrar el
   actual a `cleo-dev` en el panel de Supabase.
-- **Dominio `cleo.com.ar`:** registrarlo y, en Vercel, delegar sus nameservers (el comodín
-  `*.cleo.com.ar` no funciona con un CNAME).
+- **Dominio `cleo.com.ar`:** registrarlo y agregar en Render `cleo.com.ar`, `*.cleo.com.ar`
+  (comodín) y verificar los registros DNS que Render indique.
 - **SMTP propio (Resend)** para los emails de Auth, y envío del email de invitación (hoy la
   invitación es un link que la dueña manda por WhatsApp).
 - **Dominios propios de estudios:** la tabla y la resolución ya existen; falta la
-  verificación DNS, el alta en Vercel y las pantallas de Cleo Admin.
+  verificación DNS, el alta en Render y las pantallas de Cleo Admin.
 - **Pantallas de Cleo Admin** (estudios, planes, módulos) y **límites por plan (SAAS-04)**.
-- **Backups y monitoreo (ARC-09):** se configuran en Supabase (PITR) y Vercel.
+- **Backups y monitoreo (ARC-09):** se configuran en Supabase (PITR) y Render.
 - **Rol Profesional:** hoy tiene `clients.read` y ve todas las clientas del estudio; con la
   agenda conviene limitarlo a sus propias clientas.
 - **Mercado Pago (Sprint 5):** OAuth por estudio, botón "Pagar seña", webhook verificado contra

@@ -7,7 +7,7 @@ import { withSessionRefresh } from "@/lib/supabase/session";
  * Enruta cada request según el host (ver src/lib/host.ts):
  *   {slug}.<raíz>        → /sites/{slug}/…   (sitio del estudio y su panel en /admin)
  *   admin.<raíz>         → /platform/…       (Cleo Admin)
- *   <raíz>, www, vercel  → /…                (sitio de Cleo)
+ *   <raíz>, www, render  → /…                (sitio de Cleo)
  *   dominio propio       → /sites/{dominio}/…
  *
  * Las rutas internas (/sites, /platform) dan 404 si se piden directo.
