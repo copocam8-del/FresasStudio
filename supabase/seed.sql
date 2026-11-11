@@ -146,3 +146,29 @@ update public.tenant_settings
    set payments_connected = true, online_booking_enabled = true
  where tenant_id = '10000000-0000-4000-a000-000000000001'
    and not (payments_connected and online_booking_enabled);
+
+-- =====================================================================
+-- SOLO DESARROLLO: simular que Mercado Pago avisó un pago APROBADO de la seña.
+-- Vive únicamente en este seed, que nunca se aplica en producción: en producción
+-- esta función NO EXISTE (un test controla que ninguna migración la cree).
+-- Confirma por el mismo camino real (app.confirm_deposit_payment); lo único
+-- simulado es la verificación con Mercado Pago. Solo la dueña de la reserva.
+-- =====================================================================
+create or replace function public.dev_simulate_deposit_payment(p_slug text, p_code text)
+returns void
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_row public.appointments%rowtype;
+begin
+  select a.* into v_row
+  from public.appointments a
+  join public.tenants t on t.id = a.tenant_id
+  join public.client_profiles c on c.id = a.client_profile_id
+  where t.slug = lower(btrim(p_slug)) and a.code = upper(btrim(p_code)) and c.user_id = auth.uid();
+  if v_row.id is null then
+    raise exception 'No encontramos una reserva tuya con ese código' using errcode = 'P0002';
+  end if;
+  perform app.confirm_deposit_payment(v_row.id, 'SIMULADO-' || v_row.code, v_row.deposit_minor);
+end $$;
+revoke execute on function public.dev_simulate_deposit_payment(text, text) from public, anon;
+grant execute on function public.dev_simulate_deposit_payment(text, text) to authenticated;
