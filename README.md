@@ -261,7 +261,8 @@ Para producción, agregar en el mismo cliente el URI del proyecto de producción
 - Los colores de marca se validan en la base con las mismas reglas de contraste que la app
   (texto ≥ 4.5:1; botones y acentos ≥ 3:1). Los logos solo PNG/JPEG/WebP de hasta 1 MB, en
   la carpeta del propio estudio.
-- Seña 50% y ventana de 48 h por defecto, configurables por estudio. Cada cambio de política
+- Seña 50% (siempre mayor a 0%) y ventana de cancelación de 24 h por defecto, configurables
+  por estudio. Cada cambio de política
   crea una **versión inmutable** para que las reservas guarden cuál aceptó la clienta.
 - Se validan zona horaria, formato de URL, URLs reservadas y emails.
 

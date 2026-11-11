@@ -78,7 +78,7 @@ Además:
 El frontend **muestra** importes y consecuencias; el servidor/base **decide**.
 
 - Precios, totales, seña, saldos, créditos, comisiones, cierres de caja, stock y la regla de
-  48 h (cancelación/reprogramación) se calculan en el servidor (RPC de Postgres o código
+  24 h (cancelación/reprogramación, `cancellation_window_hours`) se calculan en el servidor (RPC de Postgres o código
   server-only de Next) y se revalidan aunque el cliente mande valores.
 - La disponibilidad y el anti doble-reserva se garantizan en PostgreSQL (transacciones,
   restricciones, holds con expiración), no en la UI.
@@ -89,7 +89,7 @@ El frontend **muestra** importes y consecuencias; el servidor/base **decide**.
   `update`/`delete`.
 - Guardar snapshot de precio, duración, servicio y versión de política aceptada en cada
   reserva. La anticipación se calcula con la zona horaria del estudio
-  (exactamente 48 h = conserva; 47:59 = pierde).
+  (exactamente 24 h = conserva; 23:59 = pierde). Toda reserva lleva seña (1–100%).
 - Módulos y límites del plan se validan en el backend, no solo ocultando botones.
 - Tokens OAuth de Mercado Pago cifrados y solo en servidor; nunca llegan al navegador.
 - Sin conexión (PWA) no se confirman pagos ni reservas.

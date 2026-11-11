@@ -173,7 +173,7 @@ export function ServiceForm({
             name="deposit_percent"
             type="number"
             inputMode="numeric"
-            min={0}
+            min={1}
             max={100}
             required
             defaultValue={initial.deposit_percent ?? ""}

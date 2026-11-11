@@ -42,6 +42,7 @@ describe("serviceSchema", () => {
   it("seña propia (N1)", () => {
     expect(serviceSchema.parse({ ...base, deposit_mode: "custom", deposit_percent: "30" }).deposit_percent).toBe(30);
     expect(serviceSchema.safeParse({ ...base, deposit_mode: "custom", deposit_percent: "130" }).success).toBe(false);
+    expect(serviceSchema.safeParse({ ...base, deposit_mode: "custom", deposit_percent: "0" }).success).toBe(false);
     expect(serviceSchema.safeParse({ ...base, deposit_mode: "custom", deposit_percent: "" }).success).toBe(false);
   });
   it.each([

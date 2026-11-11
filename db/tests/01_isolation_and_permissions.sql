@@ -13,8 +13,8 @@
 select tests.throws('select * from public.tenants', 'anon: no puede leer la tabla de estudios', 'permission denied');
 select tests.throws('select * from public.memberships', 'anon: no puede leer membresías', 'permission denied');
 select tests.ok((select count(*) = 1 from public.get_public_studio('fresas')), 'anon: ve la página pública de Fresas Studio');
-select tests.ok((select deposit_percent = 50 and cancellation_window_hours = 48 from public.get_public_studio(' Fresas ')),
-                'anon: la página pública muestra seña 50% y 48 h (y normaliza la URL)');
+select tests.ok((select deposit_percent = 50 and cancellation_window_hours = 24 from public.get_public_studio(' Fresas ')),
+                'anon: la página pública muestra seña 50% y 24 h (y normaliza la URL)');
 select tests.ok((select count(*) = 0 from public.get_public_studio('no-existe')), 'anon: URL inexistente no devuelve nada');
 select tests.throws($$select public.accept_invitation('x')$$, 'anon: no puede aceptar invitaciones', 'permission denied');
 
@@ -120,7 +120,7 @@ select tests.ok((select count(*) = 1 from public.memberships), 'profesional A: v
 select tests.ok((select count(*) = 1 from public.profiles), 'profesional A: ve solo su propio perfil');
 select tests.ok((select count(*) = 0 from public.audit_logs), 'profesional A: no ve la auditoría');
 select tests.ok((select count(*) = 0 from public.invitations), 'profesional A: no ve invitaciones');
-select tests.ok(tests.affected(format('update public.tenant_settings set deposit_percent = 0 where tenant_id = %L', :A)) = 0,
+select tests.ok(tests.affected(format('update public.tenant_settings set deposit_percent = 30 where tenant_id = %L', :A)) = 0,
                 'profesional A: no puede cambiar la configuración');
 select tests.throws(format('select public.create_invitation(%L, %L, %L)', :A, 'amiga@x.test', :'role_receptionist'),
                     'profesional A: no puede invitar', 'No tenés permiso');
@@ -175,9 +175,9 @@ select tests.ok((select count(*) = 2 from public.tenants), 'Cleo Admin: ve todos
 select * from public.admin_create_studio('nuevo-estudio', 'Nuevo Estudio', 'Duena@Nuevo.test') \gset new_
 select tests.ok(:'new_tenant_id' is not null and length(:'new_owner_invitation_token') = 64,
                 'Cleo Admin: crea un estudio y recibe el link de invitación de la dueña');
-select tests.ok((select deposit_percent = 50 and cancellation_window_hours = 48 and policy_version = 1
+select tests.ok((select deposit_percent = 50 and cancellation_window_hours = 24 and policy_version = 1
                  from public.tenant_settings where tenant_id = :'new_tenant_id'),
-                'estudio nuevo: nace con seña 50% y regla de 48 h');
+                'estudio nuevo: nace con seña 50% y regla de 24 h');
 select tests.ok((select count(*) = 1 from public.invitations i join public.roles r on r.id = i.role_id
                  where i.tenant_id = :'new_tenant_id' and i.email = 'duena@nuevo.test' and r.key = 'owner'),
                 'estudio nuevo: la invitación de la dueña tiene rol dueña');

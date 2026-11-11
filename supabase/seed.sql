@@ -51,7 +51,7 @@ on conflict (id) do nothing;
 
 update public.tenant_settings
    set description = 'Uñas, pestañas y cejas.',
-       policy_text = 'La seña se descuenta del total. Cancelando o reprogramando con 48 h o más, la seña se conserva. Con menos de 48 h se pierde.'
+       policy_text = 'La seña se descuenta del total. Cancelando o reprogramando con 24 h o más, la seña se conserva. Con menos de 24 h se pierde.'
  where tenant_id = '10000000-0000-4000-a000-000000000001';
 
 insert into public.memberships (tenant_id, user_id, role_id)

@@ -63,8 +63,8 @@ export const serviceSchema = z
     let deposit: number | null = null;
     if (v.deposit_mode === "custom") {
       const n = Number(v.deposit_percent);
-      if (!v.deposit_percent || !Number.isInteger(n) || n < 0 || n > 100) {
-        ctx.addIssue({ code: "custom", message: "La seña propia tiene que ser un número de 0 a 100." });
+      if (!v.deposit_percent || !Number.isInteger(n) || n < 1 || n > 100) {
+        ctx.addIssue({ code: "custom", message: "La seña propia tiene que ser un número de 1 a 100 (toda reserva lleva seña)." });
         return z.NEVER;
       }
       deposit = n;
