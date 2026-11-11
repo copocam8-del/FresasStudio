@@ -17,6 +17,8 @@ const CONSTRAINTS: Record<string, string> = {
   settings_hold_range: "El tiempo para pagar tiene que ser de 5 minutos a 24 horas.",
   settings_min_notice_range: "La anticipación mínima tiene que ser de 0 a 7 días.",
   settings_horizon_range: "Se puede reservar de 1 a 365 días adelante.",
+  settings_slot_interval: "El intervalo de horarios tiene que ser de 5, 10, 15, 20, 30 o 60 minutos.",
+  settings_window_range: "La ventana de cancelación tiene que ser de 0 a 720 horas.",
   professionals_name: "El nombre tiene que tener entre 2 y 60 caracteres.",
   professionals_one_per_membership: "Esa cuenta ya está vinculada a otra profesional.",
   professional_services_unique: "Esa profesional ya hace ese servicio.",
