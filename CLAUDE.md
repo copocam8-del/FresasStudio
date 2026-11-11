@@ -94,6 +94,19 @@ El frontend **muestra** importes y consecuencias; el servidor/base **decide**.
 - Tokens OAuth de Mercado Pago cifrados y solo en servidor; nunca llegan al navegador.
 - Sin conexión (PWA) no se confirman pagos ni reservas.
 
+## Regla 4 — Reservas
+
+- Nunca escribir `appointments` directo (no hay grants): crear con las RPC, que pasan por
+  `app.create_appointment` (recalcula disponibilidad, precio, seña y política, y arma la foto de
+  lo acordado). La restricción `appointments_no_overlap` es la garantía final contra la doble
+  reserva; el chequeo previo del código no alcanza.
+- Lo acordado en una reserva no se modifica (trigger). Reprogramar será una operación propia.
+- Una seña se marca pagada solo por `app.confirm_deposit_payment` (servidor, pago verificado) o
+  como cobrada en el estudio (`mark_deposit_paid_offline`, permiso de caja). Ninguna migración
+  puede crear simulaciones de pago (`no-fake-payments.test.ts`); la de desarrollo vive en el seed.
+- Fechas y horas siempre en la zona del estudio (`src/lib/booking-format.ts`).
+- Cambios en reservas: correr también el test de concurrencia (`./scripts/test-db.sh` lo incluye).
+
 ## Convenciones de código
 
 - Server Components por defecto; `"use client"` solo cuando hace falta interactividad.

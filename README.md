@@ -11,6 +11,9 @@ un estudio se ve solo su nombre, sus colores y su logo; nunca "Cleo".
   clientas con Google, fichas por estudio y marca de cada estudio.
 - Sprint 3 ([plan](docs/sprint-3-plan.md)): servicios, categorías, profesionales (con o sin
   cuenta), horarios con descansos, bloqueos, tiempo extra, fotos y catálogo en el sitio.
+- Sprint 4 ([plan](docs/sprint-4-plan.md)): motor de reservas. Disponibilidad en el servidor,
+  bloqueo temporal hasta pagar la seña (2 h), doble reserva imposible (restricción de la base
+  y test de concurrencia), foto de lo acordado, código, historial, turno manual y reglas.
 
 ## Estructura
 
@@ -22,10 +25,12 @@ src/
     platform/                  Cleo Admin (admin.<raíz>): login y acceso de superadmins
     sites/[site]/              sitio de cada estudio (rewrite desde {slug}.<raíz>)
       page.tsx                 página pública con su marca
-      ingresar/ auth/callback/ mi-ficha/   clientas: Google y sus datos
+      reservar/ reserva/[código]           reserva online (pasos 1–4) y estado de la reserva
+      ingresar/ auth/callback/ mi-ficha/   clientas: Google, sus datos y "Mis turnos"
       admin/                   panel del estudio: login, recuperar, restablecer, invitación,
-                               inicio, servicios (+ categorías), profesionales, horarios,
-                               bloqueos, equipo (invitar con link), marca (colores y logo)
+                               inicio, turnos (+ manual), servicios (+ categorías),
+                               profesionales, horarios, bloqueos, equipo, reglas de reservas,
+                               marca (colores y logo)
   lib/                         host, auth (DAL), validación, color/contraste, marca, Supabase
 supabase/
   migrations/
@@ -44,15 +49,26 @@ supabase/
     20261110001300_schedule.sql        horarios por franjas, bloqueos y app.working_intervals
     20261110001400_public_catalog.sql  catálogo público (precio "desde", solo lo visible)
     20261110001500_schedule_rpc.sql    guardar la semana (todo o nada) y bloqueos con hora local
+    20261110001600_booking_settings.sql  ventana 24 h, seña 1–100%, 2 h para pagar, reglas de reservas
+    20261110001700_appointments.sql    reservas (foto de lo acordado), exclusión anti doble reserva, historial
+    20261110001800_availability.sql    disponibilidad en el servidor (free_slots y funciones públicas)
+    20261110001900_booking.sql         crear reservas online, vencimiento, "Mis turnos", liberar
+    20261110002000_staff_booking.sql   turno manual, seña cobrada, cancelar sin seña, confirmación por pago
+    20261110002100_booking_preview.sql vista previa del resumen (quién atiende y cuánto sale)
+    20261110002200_expire_holds_cron.sql  limpieza de bloqueos vencidos cada minuto (pg_cron, Supabase)
   seed.sql                             SOLO desarrollo: Fresas Studio + Estudio Prueba (idempotente)
 db/
   local/00_supabase_shim.sql           SOLO local: imita auth, roles y Storage de Supabase
   tests/lib/setup.sql, finish.sql      framework común (transacción, asserts, atajos de sesión)
-  tests/01…11_*.sql                    aislamiento, renombre, seed, dominios, equipo, fichas, marca,
-                                       catálogo, horarios, catálogo público y RPC de horarios
+  tests/01…17_*.sql                    aislamiento, renombre, seed, dominios, equipo, fichas, marca,
+                                       catálogo, horarios, catálogo público, RPC de horarios, reglas
+                                       de reservas, reservas, disponibilidad, reserva online, panel
+                                       y vista previa
+  tests/concurrency/booking_race.sh    20 clientas a la vez por el mismo horario (base comprometida)
 scripts/
   test-db.sh                           levanta Postgres temporal, migra, siembra y testea (Linux y Windows)
-  e2e-auth.mjs, e2e-catalog.mjs        pruebas de punta a punta contra la app y Supabase de desarrollo
+  e2e-auth.mjs, e2e-catalog.mjs,       pruebas de punta a punta contra la app y Supabase de desarrollo
+  e2e-booking.mjs                      (incluye 10 envíos simultáneos al mismo horario)
   e2e-lib.mjs                          helpers compartidos de los e2e
 ```
 
@@ -67,7 +83,8 @@ scripts/
 |---|---|
 | `http://localhost:3000` | Sitio de Cleo |
 | `http://fresas.localhost:3000` | Sitio de Fresas Studio |
-| `http://fresas.localhost:3000/admin` | Panel de Fresas Studio (Servicios, Profesionales, Horarios, Bloqueos, Equipo, Marca) |
+| `http://fresas.localhost:3000/reservar` | Reservar un turno (como clienta) |
+| `http://fresas.localhost:3000/admin` | Panel de Fresas Studio (Turnos, Servicios, Profesionales, Horarios, Bloqueos, Equipo, Reservas, Marca) |
 | `http://estudio-prueba.localhost:3000` | Sitio de Estudio Prueba |
 | `http://admin.localhost:3000` | Cleo Admin |
 
@@ -88,6 +105,13 @@ Para probar desde la terminal: `curl -H "Host: fresas.localhost:3000" http://loc
 | `profesional@fresasstudio.test` | Profesional de Fresas Studio |
 | `duena@estudioprueba.test` | Dueña de Estudio Prueba |
 | `externa@otro.test` | Sin estudio (para probar invitaciones) |
+| `clienta01@e2e.test` … `clienta10@e2e.test` | Clientas con contraseña para los e2e de reservas |
+
+Las clientas reales entran con Google. Para probar la reserva sin Google en desarrollo, el e2e
+usa esas cuentas con contraseña. Con `NEXT_PUBLIC_ENABLE_SIMULATED_PAYMENTS=true` en
+`.env.local`, la reserva muestra **"Simular pago aprobado (solo desarrollo)"**: confirma por el
+mismo camino que el webhook real. La función que lo hace solo la crea el seed, así que en
+producción no existe.
 
 ## Tests
 
@@ -98,11 +122,14 @@ npm run lint
 
 # De punta a punta, contra la app compilada y el Supabase de DESARROLLO:
 npm run build && npx next start -p 3000   # en otra terminal
-npm run e2e           # e2e-auth.mjs y e2e-catalog.mjs
+npm run e2e           # e2e-auth.mjs, e2e-catalog.mjs y e2e-booking.mjs
 ```
 
 `test-db.sh` corre todo dentro de una transacción que se descarta, en un Postgres temporal
-propio (puerto 54329) que borra al terminar. Requiere PostgreSQL 15 o superior.
+propio (puerto 54329) que borra al terminar. Requiere PostgreSQL 15 o superior. Al final corre
+el **test de concurrencia** sobre una copia con datos comprometidos: 20 conexiones intentan el
+mismo horario a la vez y tiene que quedar exactamente una reserva. Sin la restricción de la base
+quedaban 11: el chequeo del código no alcanza, lo garantiza la base.
 
 `npm run e2e` crea y limpia lo que usa (invitaciones, membresía, logo, servicios y profesionales
 de prueba, que se archivan), así que se puede repetir; si una corrida se corta, la siguiente
@@ -194,6 +221,17 @@ Para producción, agregar en el mismo cliente el URI del proyecto de producción
 
 ## Checklist manual (lo que el e2e no cubre)
 
+**Sprint 4 — reservas (celular real o 375 px):**
+- [ ] Como clienta (Google o `clienta01@e2e.test`): Reservar → servicio → «Cualquiera
+      disponible» → día y horario → resumen con precio, seña y saldo → aceptar la política →
+      «Te guardamos el horario» con el tiempo para pagar.
+- [ ] «Simular pago aprobado» → la reserva queda confirmada; aparece en «Mis turnos».
+- [ ] Reservar otra, «Liberar el horario» y ver que el horario vuelve a estar libre.
+- [ ] Como dueña: ver el turno en «Turnos», abrir el detalle con su historial.
+- [ ] Turno manual de WhatsApp (clienta nueva), primero esperando pago y después «Marcar cobrada».
+- [ ] En «Reglas de reservas», cambiar el tiempo para pagar y la anticipación mínima.
+- [ ] Como profesional: en «Turnos» ve solo los suyos.
+
 **Sprint 3 — en un celular real (o el navegador en 375 px):**
 - [ ] Crear un servicio con las duraciones rápidas, ver «Se muestra: $ …» mientras escribís el
       precio, subir una foto y verlo en el sitio.
@@ -280,9 +318,28 @@ Para producción, agregar en el mismo cliente el URI del proyecto de producción
 - El catálogo público muestra solo lo activo y visible, con «desde» cuando corresponde, y no
   expone cuentas, tiempo extra ni seña.
 
+**Reservas**
+- **Doble reserva imposible:** restricción de exclusión de la base sobre el tiempo ocupado
+  (servicio + tiempo extra) de cada profesional, para reservas activas. Probado con 20
+  conexiones simultáneas y con 10 envíos simultáneos a la app.
+- La disponibilidad se calcula siempre en el servidor (horarios, descansos, bloqueos, duración
+  propia, tiempo extra, anticipación de 12 h, 60 días, zona horaria del estudio). Al reservar se
+  recalcula todo: la pantalla no decide nada.
+- El bloqueo temporal es la misma reserva "esperando pago" y vence a las 2 h (configurable),
+  sin depender de un reloj externo; pg_cron solo actualiza el historial.
+- Cada reserva guarda la foto de lo acordado (servicio, profesional, precio, duración, tiempo
+  extra, seña redondeada al peso y versión de la política), que no cambia aunque cambien los
+  precios. Código de 6 caracteres, estado de la reserva separado del de la seña, historial de
+  solo agregado.
+- Toda reserva lleva seña (1–100%). Se confirma solo con el pago verificado por el servidor
+  (`app.confirm_deposit_payment`, solo `service_role`) o con la seña cobrada en el estudio
+  (permiso de caja), que queda registrada.
+- La clienta ve solo sus reservas; la profesional, solo sus turnos; Cleo Admin, ninguna.
+
 **Auditoría**
 - Se registra quién hizo cada cambio en estudios, configuración, roles, membresías,
-  invitaciones, dominios, fichas, servicios, profesionales, horarios y bloqueos.
+  invitaciones, dominios, fichas, servicios, profesionales, horarios y bloqueos. Las reservas
+  tienen su propio historial.
 - Es de solo agregado: nadie puede editarla ni borrarla, ni siquiera el superusuario.
 
 ## Decisiones tomadas
@@ -312,10 +369,15 @@ Para producción, agregar en el mismo cliente el URI del proyecto de producción
 - **Backups y monitoreo (ARC-09):** se configuran en Supabase (PITR) y Vercel.
 - **Rol Profesional:** hoy tiene `clients.read` y ve todas las clientas del estudio; con la
   agenda conviene limitarlo a sus propias clientas.
-- **Reservas (próximo):** cada turno tiene que guardar una foto de lo acordado (nombre,
-  duración, tiempo extra, precio, seña y versión de política) para que un cambio de precio no
-  altere turnos existentes, y la disponibilidad sale de `app.working_intervals` menos los turnos.
-  Al bloquear un día con turnos, avisar antes de guardar.
+- **Mercado Pago (Sprint 5):** OAuth por estudio, botón "Pagar seña", webhook verificado contra
+  la API que llama a `app.confirm_deposit_payment` y marca `payments_connected`. Mientras tanto
+  las reservas online no se pueden prender en producción.
+- **Pago que llega tarde** (reserva ya vencida o cancelada): queda para devolución o crédito
+  (Sprint 5 / Épica 07).
+- **Cancelar y reprogramar con seña** (ventana de 24 h, crédito o pérdida): Épica 07.
+- **Agenda visual** por día y semana: Épica 08. Al bloquear un día que ya tiene turnos, avisar.
+- **Estudio Prueba** sigue con ventana de 48 h: la migración cambió el valor por defecto y
+  Fresas; los estudios existentes conservan su configuración.
 
 ## Pendientes técnicos
 

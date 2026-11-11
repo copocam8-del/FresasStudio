@@ -1,7 +1,12 @@
 # Sprint 4 — Plan: motor de reservas (Épica 05)
 
-> Estado: **aprobado** con cambios (ver "Cambios después de la revisión"). Se implementa por
-> pasos, con un commit por paso y los tests en verde en cada uno.
+> Estado: **implementado** (pasos 0 a 10). Pendiente: correr `scripts/e2e-booking.mjs` con la
+> app levantada y el checklist manual del README.
+> Cambios de implementación respecto del plan: la configuración de reservas quedó en su propia
+> sección (`/admin/reservas`) en lugar de dentro de "Marca"; se agregó `preview_booking` para
+> mostrar quién atiende antes de confirmar (B4); el turno manual usa su propio chequeo de
+> disponibilidad (`app.staff_slot_ok`); `app.confirm_deposit_payment` se creó en este sprint para
+> que el pago simulado de desarrollo use el mismo camino que el webhook real.
 
 ## Cambios después de la revisión
 
