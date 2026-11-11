@@ -76,3 +76,11 @@ for f in "$ROOT"/db/tests/*.sql; do
   echo "→ Tests $(basename "$f")"
   "${PSQL[@]}" -d fresas_test -f "$f"
 done
+
+# Concurrencia: necesita datos comprometidos, así que corre sobre una copia propia.
+echo "→ Tests de concurrencia (db/tests/concurrency)"
+"${PSQL[@]}" -d postgres -c "create database fresas_race template fresas_test" >/dev/null
+for f in "$ROOT"/db/tests/concurrency/*.sh; do
+  echo "→ $(basename "$f")"
+  bash "$f" fresas_race "${PSQL[@]}"
+done
