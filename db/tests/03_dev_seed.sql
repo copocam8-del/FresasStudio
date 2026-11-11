@@ -5,8 +5,10 @@
 \ir lib/setup.sql
 
 :as_super
-select tests.ok((select count(*) = 7 from auth.users where email like '%.test'),
+select tests.ok((select count(*) = 7 from auth.users where email like '%.test' and email not like '%@e2e.test'),
                 'seed: crea las 7 usuarias de prueba');
+select tests.ok((select count(*) = 10 from auth.users where email like '%@e2e.test'),
+                'seed: crea las 10 clientas del e2e de reservas');
 select tests.ok(not exists (select 1 from auth.users where email like '%.test'
                             and encrypted_password is distinct from extensions.crypt('CleoDev-2026', encrypted_password)),
                 'seed: todas tienen la contraseña de desarrollo (hash bcrypt válido)');
@@ -21,7 +23,7 @@ select tests.ok(not exists (select 1 from auth.users where email like '%.test'
                             and (confirmation_token is null or recovery_token is null
                                  or email_change_token_new is null or email_change is null)),
                 'seed: los tokens de auth quedan en '''' (Supabase Auth falla con NULL)');
-select tests.ok((select count(*) = 7 from public.profiles p join auth.users u on u.id = p.id where u.email like '%.test'),
+select tests.ok((select count(*) = 17 from public.profiles p join auth.users u on u.id = p.id where u.email like '%.test'),
                 'seed: cada usuaria tiene su perfil (trigger handle_new_user)');
 
 -- Idempotencia: aplicar el seed otra vez no falla ni duplica filas

@@ -172,3 +172,25 @@ begin
 end $$;
 revoke execute on function public.dev_simulate_deposit_payment(text, text) from public, anon;
 grant execute on function public.dev_simulate_deposit_payment(text, text) to authenticated;
+
+-- =====================================================================
+-- Clientas de prueba para el e2e de reservas (10, para la carrera simultánea).
+-- Mismo formato que las usuarias del principio: pueden iniciar sesión. Solo desarrollo.
+-- =====================================================================
+insert into auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data,
+  confirmation_token, recovery_token, email_change_token_new, email_change, created_at, updated_at)
+select ('00000000-0000-4000-b100-0000000000' || lpad(i::text, 2, '0'))::uuid, '00000000-0000-0000-0000-000000000000',
+       'authenticated', 'authenticated', 'clienta' || lpad(i::text, 2, '0') || '@e2e.test',
+       extensions.crypt('CleoDev-2026', extensions.gen_salt('bf')), now(),
+       '{"provider": "email", "providers": ["email"]}', jsonb_build_object('full_name', 'Clienta E2E ' || i),
+       '', '', '', '', now(), now()
+from generate_series(1, 10) i
+on conflict (id) do nothing;
+
+insert into auth.identities (id, user_id, provider_id, provider, identity_data, created_at, updated_at)
+select gen_random_uuid(), u.id, u.id::text, 'email',
+       jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true), now(), now()
+from auth.users u where u.email like '%@e2e.test'
+on conflict (provider_id, provider) do nothing;
