@@ -1,13 +1,16 @@
+import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
+import { stepUrl } from "@/lib/booking-format";
 import { catalogPhotoUrl } from "@/lib/catalog-photo";
 import { formatPrice } from "@/lib/money";
 import type { PublicCatalog } from "@/lib/studio";
 import { formatDuration } from "@/lib/time";
 
 /**
- * Catálogo y profesionales en el sitio del estudio (marca blanca). Sin botón
- * "Reservar" hasta que exista el flujo real de reservas.
+ * Catálogo y profesionales en el sitio del estudio (marca blanca). El botón
+ * "Reservar" aparece solo si el estudio tiene las reservas online prendidas.
  */
-export function CatalogSections({ catalog }: { catalog: PublicCatalog }) {
+export function CatalogSections({ catalog, bookingEnabled }: { catalog: PublicCatalog; bookingEnabled: boolean }) {
   const proName = (id: string) => catalog.professionals.find((p) => p.id === id)?.display_name;
   const groups = [
     ...catalog.categories.map((c) => ({ key: c.id, title: c.name, items: catalog.services.filter((s) => s.category_id === c.id) })),
@@ -44,6 +47,11 @@ export function CatalogSections({ catalog }: { catalog: PublicCatalog }) {
                         <span className="text-sm text-muted-foreground">{formatDuration(s.duration_minutes)}</span>
                         {s.description && <p className="text-sm text-muted-foreground">{s.description}</p>}
                         {who.length > 0 && <p className="text-sm text-muted-foreground">Con {who.join(" o ")}</p>}
+                        {bookingEnabled && who.length > 0 && (
+                          <Link href={stepUrl(s.id)} className={buttonVariants({ size: "sm", className: "mt-1 h-10 w-fit px-4" })}>
+                            Reservar
+                          </Link>
+                        )}
                       </div>
                     </li>
                   );

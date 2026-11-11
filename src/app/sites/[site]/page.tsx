@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { buttonVariants } from "@/components/ui/button";
 import { getUser } from "@/lib/auth";
+import { getBookingContext } from "@/lib/booking-data";
 import { StudioLogo } from "@/components/brand/studio-logo";
 import { CatalogSections } from "@/components/site/catalog-sections";
 import { contactItems } from "@/lib/contact";
@@ -15,7 +17,8 @@ export default async function StudioHome({ params }: PageProps<"/sites/[site]">)
   if (!studio) notFound();
 
   const contact = contactItems(studio.contact);
-  const [user, catalog] = await Promise.all([getUser(), getPublicCatalog(studio.slug)]);
+  const [user, catalog, booking] = await Promise.all([getUser(), getPublicCatalog(studio.slug), getBookingContext(studio.slug)]);
+  const bookingEnabled = Boolean(booking?.online_booking_enabled);
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 px-4 py-12">
@@ -34,9 +37,14 @@ export default async function StudioHome({ params }: PageProps<"/sites/[site]">)
         {studio.description && (
           <p className="whitespace-pre-line text-lg text-muted-foreground">{studio.description}</p>
         )}
+        {bookingEnabled && (
+          <Link href="/reservar" className={buttonVariants({ size: "lg", className: "mt-2 h-12 w-fit px-6 text-base" })}>
+            Reservar turno
+          </Link>
+        )}
       </header>
 
-      {catalog && <CatalogSections catalog={catalog} />}
+      {catalog && <CatalogSections catalog={catalog} bookingEnabled={bookingEnabled} />}
 
       {contact.length > 0 && (
         <section aria-labelledby="contacto" className="flex flex-col gap-3">

@@ -186,7 +186,9 @@ ok(/desde \$\s13\.000/.test(site) && /\$\s9\.000/.test(site) && site.includes("1
 ok(site.includes("Con Sofi o Caro") && site.includes(">Profesionales<") && site.includes("Especialista en uñas."),
    "sitio: muestra las profesionales y quién hace cada servicio");
 ok(!site.includes("Diseño con henna"), "sitio: el servicio «no visible en el sitio» no aparece");
-ok(!/Cleo/.test(site) && !/Reservar/.test(site), "sitio: sin «Cleo» y sin botón «Reservar» que todavía no funciona");
+ok(!/Cleo/.test(site), "sitio: sin «Cleo» (marca blanca)");
+ok(site.includes('href="/reservar"') && site.includes("Reservar turno"),
+   "sitio: con las reservas online prendidas (seed de desarrollo) ofrece «Reservar turno»");
 r = await req("estudio-prueba.localhost:3000", "/");
 ok(r.status === 200 && !r.html.includes(">Servicios<") && !r.html.includes("Esmaltado"), "Estudio Prueba: no muestra nada del catálogo de Fresas");
 

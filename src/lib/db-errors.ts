@@ -3,7 +3,7 @@
  * mensajes que escribimos nosotros (raise exception con códigos conocidos) o los de
  * restricciones mapeadas; cualquier otro error se reemplaza por uno genérico.
  */
-const OUR_CODES = ["42501", "P0002", "22023", "23505", "23514"];
+const OUR_CODES = ["42501", "P0002", "22023", "23505", "23514", "23P01"];
 
 const CONSTRAINTS: Record<string, string> = {
   service_categories_tenant_name: "Ya existe una categoría con ese nombre.",
@@ -24,6 +24,8 @@ const CONSTRAINTS: Record<string, string> = {
   working_hours_no_overlap: "Esa franja se superpone con otra del mismo día.",
   working_hours_range: "La franja no es válida: el inicio tiene que ser antes del fin, en pasos de 5 minutos.",
   schedule_blocks_period: "El bloqueo no es válido: tiene que terminar después de empezar y durar como máximo un año.",
+  appointments_one_pending_online: "Ya tenés una reserva esperando pago. Pagala o liberala antes de reservar otra.",
+  appointments_no_overlap: "Ese horario se acaba de ocupar. Elegí otro.",
 };
 
 export function userFacingDbError(error: { code?: string; message: string; details?: string | null }): string {
