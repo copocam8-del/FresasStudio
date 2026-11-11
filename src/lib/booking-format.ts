@@ -82,3 +82,30 @@ export function confirmUrl(serviceId: string, pro: ProChoice, startsAt: string):
   const q = new URLSearchParams({ s: serviceId, p: pro, t: startsAt });
   return `/reservar/confirmar?${q.toString()}`;
 }
+
+/** Desplazamiento (ms) de una zona horaria en un instante dado. */
+function tzOffsetMs(instant: number, timezone: string): number {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+    }).formatToParts(new Date(instant)).map((p) => [p.type, p.value]),
+  );
+  const asUtc = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+  return asUtc - instant;
+}
+
+/**
+ * Fecha y hora LOCALES del estudio ("2026-11-16", "14:00") → instante ISO.
+ * Sirve para el turno manual del panel. null si la fecha u hora no son válidas.
+ */
+export function localToInstant(ymd: string, hhmm: string, timezone: string): string | null {
+  if (!isYmd(ymd) || !/^\d{2}:\d{2}$/.test(hhmm)) return null;
+  const [h, m] = hhmm.split(":").map(Number);
+  if (h > 23 || m > 59) return null;
+  const [y, mo, d] = ymd.split("-").map(Number);
+  const naive = Date.UTC(y, mo - 1, d, h, m);
+  let guess = naive - tzOffsetMs(naive, timezone);
+  guess = naive - tzOffsetMs(guess, timezone); // segunda pasada por cambios de horario
+  return new Date(guess).toISOString();
+}

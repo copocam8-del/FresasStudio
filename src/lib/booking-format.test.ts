@@ -53,3 +53,19 @@ describe("parámetros de la URL", () => {
     expect(confirmUrl("s1", "any", "2026-11-16T17:00:00.000Z")).toBe("/reservar/confirmar?s=s1&p=any&t=2026-11-16T17%3A00%3A00.000Z");
   });
 });
+
+describe("localToInstant (turno manual)", () => {
+  it("convierte la hora local del estudio a un instante", async () => {
+    const { localToInstant } = await import("./booking-format");
+    expect(localToInstant("2026-11-16", "14:00", BA)).toBe("2026-11-16T17:00:00.000Z");
+    expect(localToInstant("2026-11-16", "23:30", BA)).toBe("2026-11-17T02:30:00.000Z");
+    expect(localToInstant("2026-07-01", "09:00", "Europe/Madrid")).toBe("2026-07-01T07:00:00.000Z"); // verano
+    expect(localToInstant("2026-12-01", "09:00", "Europe/Madrid")).toBe("2026-12-01T08:00:00.000Z"); // invierno
+  });
+  it("rechaza fechas u horas inválidas", async () => {
+    const { localToInstant } = await import("./booking-format");
+    for (const [d, t] of [["2026-02-30", "10:00"], ["2026-11-16", "25:00"], ["2026-11-16", "9:00"], ["x", "10:00"]]) {
+      expect(localToInstant(d, t, BA)).toBeNull();
+    }
+  });
+});

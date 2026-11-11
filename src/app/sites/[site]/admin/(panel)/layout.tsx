@@ -19,6 +19,7 @@ export default async function PanelLayout({ children, params }: LayoutProps<"/si
 
   const links = [
     { href: "/admin", label: "Inicio", show: true },
+    { href: "/admin/turnos", label: "Turnos", show: can(ctx, "agenda.read_all") || can(ctx, "agenda.read_own") },
     { href: "/admin/servicios", label: "Servicios", show: true },
     { href: "/admin/profesionales", label: "Profesionales", show: true },
     { href: "/admin/horarios", label: "Horarios", show: true },
