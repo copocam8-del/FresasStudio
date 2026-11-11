@@ -28,6 +28,7 @@ r = await req(F, `/reservar/${SEMI}`);
 ok(r.status === 200 && r.html.includes("Cualquiera disponible") && r.html.includes("Sofi") && r.html.includes("Caro"),
    "paso 2: «Cualquiera disponible» primero y cada profesional");
 r = await req(F, `/reservar/${SEMI}?p=${SOFI}`);
+const stepPage = r.html;
 const slotLinks = [...r.html.matchAll(/href="(\/reservar\/confirmar\?[^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, "&"));
 ok(r.status === 200 && slotLinks.length > 0, `paso 3: día y horarios libres de Sofi (${slotLinks.length} horarios)`);
 ok(/>1[4-8]:[0-5][05]</.test(r.html.replace(/<!-- -->/g, "")) && !/>0[89]:/.test(r.html.replace(/<!-- -->/g, "")),
@@ -59,8 +60,17 @@ ok(mine?.status === "pending_payment" && mine.price_minor === 1500000 && mine.de
    "en la base: esperando pago, $ 15.000, seña $ 7.500, ventana 24 h");
 ok(Math.abs(new Date(mine.hold_expires_at).getTime() - Date.now() - 2 * 3600_000) < 60_000, "bloqueo temporal de 2 horas");
 
-r = await submit(F, confirmPath.replace(/t=[^&]+/, `t=${encodeURIComponent(slotLinks[1] ? new URL("http://x" + slotLinks[1]).searchParams.get("t") : "")}`),
-  "Reservar y pagar seña", { phone: "11 5000-0001", accept_policy: "on" }, c1);
+// Un horario de OTRO día (nunca se superpone con la reserva recién hecha).
+const dayLinks = [...stepPage.matchAll(/href="(\/reservar\/[^"?]+\?p=[^&"]+&amp;dia=\d{4}-\d{2}-\d{2})"/g)].map((m) => m[1].replace(/&amp;/g, "&"));
+const firstDay = new URL("http://x" + confirmPath).searchParams.get("t");
+const firstYmd = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(new Date(firstDay));
+let otherSlot;
+for (const link of dayLinks.filter((l) => !l.endsWith(firstYmd))) {
+  const page = await req(F, link);
+  otherSlot = [...page.html.matchAll(/href="(\/reservar\/confirmar\?[^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, "&"))[0];
+  if (otherSlot) break;
+}
+r = await submit(F, otherSlot, "Reservar y pagar seña", { phone: "11 5000-0001", accept_policy: "on" }, c1);
 ok(r.html.includes("Ya tenés una reserva esperando pago"), "B7: no puede apartar otro horario mientras tiene uno pendiente");
 
 // Lo acordado no cambia aunque cambie el precio
@@ -80,7 +90,7 @@ ok(r.html.includes("Reserva confirmada"), "pago verificado (simulado) → reserv
 // ---------------------------------------------------------------------
 // Carrera: 10 clientas confirman el MISMO horario a la vez contra la app real
 // ---------------------------------------------------------------------
-const raceSlot = slotLinks.at(-1);
+const raceSlot = otherSlot; // libre: el intento de B7 se rechazó y no lo ocupó
 const sessions = await Promise.all([...Array(10)].map((_, i) => clientSession(i + 1)));
 const pages = await Promise.all(sessions.map((s) => req(F, raceSlot, { cookies: s })));
 const forms = pages.map((p) => {
@@ -106,34 +116,40 @@ const pro = await login(F, "profesional@fresasstudio.test");
 r = await req(F, `/admin/turnos?dia=${ymd}`, { cookies: pro });
 ok(r.status === 200 && !/Caro ·/.test(r.html), "panel: la profesional (Sofi) ve solo los suyos");
 
+// Los turnos manuales confirmados no se pueden cancelar (B13): para poder repetir el e2e,
+// cada corrida usa un día distinto y lejano (entre 70 y 370 días adelante).
+const manualYmd = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" })
+  .format(new Date(Date.now() + (70 + (Math.floor(Date.now() / 60_000) % 300)) * 86_400_000));
 r = await submit(F, "/admin/turnos/nuevo", "Guardar turno", {
   client_mode: "new", new_name: "Clienta WhatsApp E2E", new_phone: "11 5000-9999", professional: SOFI, service: SEMI,
-  date: ymd, time: "03:00", payment: "pending", note: "" }, staff);
+  date: manualYmd, time: "03:00", payment: "pending", note: "" }, staff);
 ok(r.html.includes("no está disponible"), "turno manual a las 3 AM sin el tilde: no disponible");
 r = await submit(F, "/admin/turnos/nuevo", "Guardar turno", {
   client_mode: "new", new_name: "Clienta WhatsApp E2E", new_phone: "11 5000-9999", professional: SOFI, service: SEMI,
-  date: ymd, time: "07:00", force: "on", payment: "pending", note: "" }, staff);
+  date: manualYmd, time: "07:00", force: "on", payment: "pending", note: "" }, staff);
 const manualId = /\/admin\/turnos\/([0-9a-f-]{36})$/.exec(r.location ?? "")?.[1];
 ok(r.status === 303 && Boolean(manualId), "turno manual forzado fuera de horario: se crea esperando pago");
 r = await req(F, `/admin/turnos/${manualId}`, { cookies: staff });
 ok(r.html.includes("Marcar cobrada") && r.html.includes("Cancelar turno") && r.html.includes("Reserva creada"), "detalle: acciones e historial");
 r = await req(F, `/admin/turnos/${manualId}`, { method: "POST", body: (() => { const fd = formFields(r.html, "Marcar cobrada"); fd.set("method", "transfer"); return fd; })(), cookies: staff });
 r = await req(F, `/admin/turnos/${manualId}`, { cookies: staff });
-ok(r.html.includes("Confirmado") && r.html.includes("Seña cobrada en el estudio (transferencia)"), "marcar seña cobrada por transferencia → confirmado, con el medio en el historial");
+ok(r.html.includes("Confirmado") && r.html.replace(/<!-- -->/g, "").includes("Seña cobrada en el estudio (transferencia)"), "marcar seña cobrada por transferencia → confirmado, con el medio en el historial");
 
 r = await submit(F, "/admin/turnos/nuevo", "Guardar turno", {
   client_mode: "new", new_name: "Clienta Cancela E2E", new_phone: "11 5000-8888", professional: SOFI, service: SEMI,
-  date: ymd, time: "06:00", force: "on", payment: "pending", note: "" }, staff);
+  date: manualYmd, time: "05:00", force: "on", payment: "pending", note: "" }, staff); // 05:00–06:10: no pisa el de las 07:00
 const cancelId = /\/admin\/turnos\/([0-9a-f-]{36})$/.exec(r.location ?? "")?.[1];
 r = await req(F, `/admin/turnos/${cancelId}`, { cookies: staff });
 r = await req(F, `/admin/turnos/${cancelId}`, { method: "POST", body: (() => { const fd = formFields(r.html, "Cancelar turno"); fd.set("reason", "No confirmó"); return fd; })(), cookies: staff });
 r = await req(F, `/admin/turnos/${cancelId}`, { cookies: staff });
-ok(r.html.includes("Cancelado") && r.html.includes("«No confirmó»"), "cancelar un turno sin seña: queda cancelado con el motivo");
+ok(r.html.includes("Cancelado") && r.html.replace(/<!-- -->/g, "").includes("«No confirmó»"), "cancelar un turno sin seña: queda cancelado con el motivo");
 
 // Reglas de reservas
 r = await req(F, "/admin/reservas", { cookies: staff });
 ok(r.status === 200 && r.html.includes("Reglas de reservas") && r.html.includes("Tiempo para pagar"), "panel: reglas de reservas");
-r = await submit(F, "/admin/reservas", "Guardar reglas", { deposit_percent: "0" }, staff);
+r = await submit(F, "/admin/reservas", "Guardar reglas", {
+  online_booking_enabled: "on", booking_min_notice_minutes: "720", booking_horizon_days: "60", slot_interval_minutes: "15",
+  booking_hold_minutes: "120", deposit_percent: "0", cancellation_window_hours: "24" }, staff);
 ok(r.html.includes("toda reserva lleva seña"), "reglas: seña 0% rechazada");
 
 done();
