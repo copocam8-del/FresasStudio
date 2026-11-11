@@ -39,7 +39,7 @@ begin
     p_start + make_interval(mins => p_minutes + p_buffer), 'Esmaltado semipermanente', 'Pro', p_minutes, p_buffer,
     p_price, false, 'ARS', p_pct, (ceil(p_price * p_pct / 10000.0) * 100)::bigint, v_pv, 24, p_status,
     case when p_status = 'confirmed' then 'paid'::public.deposit_status else 'pending'::public.deposit_status end,
-    case when p_status = 'pending_payment' then now() + interval '2 hours' end, 'online')
+    case when p_status = 'pending_payment' then now() + interval '2 hours' end, 'staff')  -- 'staff': el límite B7 (una pendiente online) no aplica
   returning id into v_id;
   return v_id;
 end $$;

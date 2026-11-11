@@ -136,3 +136,13 @@ insert into public.schedule_blocks (id, tenant_id, professional_id, kind, period
   ('34000000-0000-4000-a000-000000000002', '10000000-0000-4000-a000-000000000001', '32000000-0000-4000-a000-000000000002', 'vacation',
    '[2026-12-21 03:00Z, 2026-12-25 03:00Z)', true, null)
 on conflict (id) do nothing;
+
+-- =====================================================================
+-- Reservas online en desarrollo (Sprint 4). En producción "pagos conectados" lo
+-- marca el servidor al conectar Mercado Pago (Sprint 5); acá se simula para poder
+-- probar el flujo completo. Nunca en producción.
+-- =====================================================================
+update public.tenant_settings
+   set payments_connected = true, online_booking_enabled = true
+ where tenant_id = '10000000-0000-4000-a000-000000000001'
+   and not (payments_connected and online_booking_enabled);

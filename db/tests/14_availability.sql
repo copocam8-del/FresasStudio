@@ -74,7 +74,7 @@ begin
     'Esmaltado semipermanente', 'Pro', 60, 10, 1500000, false, 'ARS', 50, 750000,
     (select policy_version from public.tenant_settings where tenant_id = '10000000-0000-4000-a000-000000000001'), 24,
     p_status, case when p_status = 'confirmed' then 'paid'::public.deposit_status else 'pending'::public.deposit_status end,
-    case when p_status = 'pending_payment' then now() + p_hold end, 'online')
+    case when p_status = 'pending_payment' then now() + p_hold end, 'staff')  -- 'staff': el límite B7 (una pendiente online) no aplica
   returning id into v_id;
   return v_id;
 end $$;
