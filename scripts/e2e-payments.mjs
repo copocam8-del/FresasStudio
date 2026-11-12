@@ -262,6 +262,23 @@ try {
   ok(strip(r.html).includes("Te devolvimos") && r.html.includes("se liberó la reserva"), "la clienta ve la devolución explicada");
 
   // -------------------------------------------------------------------
+  // Conciliación en el panel
+  // -------------------------------------------------------------------
+  r = await req(F, "/admin/pagos/movimientos", { cookies: ownerCookies });
+  const mov = strip(r.html);
+  ok(r.status === 200 && mov.includes("Pagos recibidos") && mov.includes(String(payId)) && mov.includes("Confirmó la reserva")
+     && mov.includes("Devuelto") && mov.includes("Comisión Mercado Pago") && !/Cleo/.test(r.html),
+     "panel: pagos recibidos con resultado, comisión y devoluciones");
+  r = await req(F, "/admin/pagos/movimientos/csv", { cookies: ownerCookies });
+  ok(r.status === 200 && r.html.includes("Operación Mercado Pago") && r.html.includes(String(payId)) && r.html.includes(String(pay4)),
+     "panel: CSV de pagos para cruzar con Mercado Pago");
+  const pro = await login(F, "profesional@fresasstudio.test");
+  r = await req(F, "/admin/pagos/movimientos/csv", { cookies: pro });
+  ok(r.status === 404, "profesional: no puede bajar el CSV de pagos");
+  r = await req(F, `/admin/turnos/${payRow.appointment_id}`, { cookies: ownerCookies });
+  ok(strip(r.html).includes("Pagos con Mercado Pago") && strip(r.html).includes(`operación ${payId}`), "detalle del turno: muestra el pago de Mercado Pago");
+
+  // -------------------------------------------------------------------
   // Token vencido → renovación automática; acceso revocado → volver a conectar
   // -------------------------------------------------------------------
   const before = (await fakeState()).refreshCount;

@@ -10,6 +10,8 @@ import { DEPOSIT_LABEL, STATUS_LABEL } from "@/lib/appointment-labels";
 import { effectiveStatus, loadAppointment } from "@/lib/appointments-data";
 import { formatDateTimeLong, formatTime, ymdIn } from "@/lib/booking-format";
 import { formatMoney } from "@/lib/money";
+import { OUTCOME_LABEL, paymentMethodLabel, STATUS_LABEL as PAY_STATUS } from "@/lib/payment-labels";
+import { serverSupabase } from "@/lib/supabase/server";
 import { formatDuration } from "@/lib/time";
 import { cancelUnpaidAction, markPaidOfflineAction } from "../actions";
 
@@ -22,6 +24,14 @@ const EVENT_LABEL: Record<string, string> = {
   expired: "Venció sin pago",
   deposit_paid: "Seña pagada online",
   deposit_paid_offline: "Seña cobrada en el estudio",
+  deposit_refunded: "Seña devuelta",
+  payment_disputed: "Contracargo de la seña",
+};
+
+type TurnPayment = {
+  id: string; provider_payment_id: string; status: string; outcome: string | null; amount_minor: number;
+  refunded_minor: number; currency: string; payment_method: string | null; payment_type: string | null;
+  approved_at: string | null; created_at: string;
 };
 const METHOD: Record<string, string> = { transfer: "transferencia", cash: "efectivo" };
 
@@ -34,6 +44,12 @@ export default async function TurnoPage({ params }: PageProps<"/sites/[site]/adm
   const { appointment: a, events, client } = data;
   const tz = ctx.studio.timezone;
   const st = effectiveStatus(a);
+  const supabase = await serverSupabase();
+  // RLS: solo quien tiene caja o la agenda completa ve los pagos.
+  const { data: payData } = await supabase.from("payments")
+    .select("id, provider_payment_id, status, outcome, amount_minor, refunded_minor, currency, payment_method, payment_type, approved_at, created_at")
+    .eq("tenant_id", ctx.tenantId).eq("appointment_id", a.id).order("created_at");
+  const payments = (payData ?? []) as TurnPayment[];
 
   const actor = (e: (typeof events)[number]) =>
     e.actor_user_id === null ? "Sistema" : client?.user_id === e.actor_user_id ? "La clienta" : "El equipo";
@@ -108,6 +124,26 @@ export default async function TurnoPage({ params }: PageProps<"/sites/[site]/adm
         </section>
       )}
 
+      {payments.length > 0 && (
+        <section aria-labelledby="pagos" className="flex flex-col gap-2">
+          <h2 id="pagos" className="font-semibold text-foreground">Pagos con Mercado Pago</h2>
+          <ul className="flex flex-col divide-y rounded-xl border bg-card">
+            {payments.map((p) => (
+              <li key={p.id} className="flex flex-col p-3 text-sm">
+                <span className="font-medium text-card-foreground">
+                  {formatMoney(p.amount_minor, p.currency)} · {PAY_STATUS[p.status] ?? p.status}
+                  {p.outcome ? ` · ${OUTCOME_LABEL[p.outcome] ?? p.outcome}` : ""}
+                </span>
+                <span className="text-muted-foreground">
+                  {formatDateTimeLong(p.approved_at ?? p.created_at, tz)} · {paymentMethodLabel(p.payment_method, p.payment_type)}
+                  {p.refunded_minor > 0 ? ` · devuelto ${formatMoney(p.refunded_minor, p.currency)}` : ""} · operación {p.provider_payment_id}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section aria-labelledby="historial" className="flex flex-col gap-2">
         <h2 id="historial" className="font-semibold text-foreground">Historial</h2>
         <ol className="flex flex-col divide-y rounded-xl border bg-card">
@@ -121,6 +157,8 @@ export default async function TurnoPage({ params }: PageProps<"/sites/[site]/adm
                 {formatDateTimeLong(e.created_at, tz)} · {actor(e)}
                 {typeof e.detail.note === "string" ? ` · «${e.detail.note}»` : ""}
                 {e.detail.reason === "released_by_client" ? " · la clienta liberó el horario" : ""}
+                {e.detail.late === true ? " · el pago llegó después del vencimiento y el horario seguía libre" : ""}
+                {typeof e.detail.payment_ref === "string" ? ` · operación ${e.detail.payment_ref}` : ""}
               </span>
             </li>
           ))}

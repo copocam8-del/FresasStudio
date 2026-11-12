@@ -54,6 +54,7 @@ export default async function PaymentsPage({ params, searchParams }: PageProps<"
       <PageHeader
         title="Mercado Pago"
         description="Las señas de las reservas online se cobran en la cuenta de Mercado Pago del estudio."
+        action={can(ctx, "cash.read") ? { href: "/admin/pagos/movimientos", label: "Ver pagos recibidos" } : undefined}
       />
       {errorMsg && <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">{errorMsg}</p>}
       {okMsg && <p role="status" className="rounded-lg border bg-secondary p-3 text-sm text-secondary-foreground">{okMsg}</p>}

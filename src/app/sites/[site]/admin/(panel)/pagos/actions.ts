@@ -5,9 +5,11 @@ import { redirect } from "next/navigation";
 import { can, currentStaff } from "@/lib/auth";
 import { userFacingDbError } from "@/lib/db-errors";
 import { paymentsConfig } from "@/lib/payments/config";
+import { processRefund } from "@/lib/payments/flows";
 import { encryptSecret, pkceChallenge, randomToken, sha256Hex, verifierAad } from "@/lib/payments/crypto";
 import { authorizationUrl } from "@/lib/payments/mp-api";
 import { serverSupabase } from "@/lib/supabase/server";
+import { z } from "zod";
 
 export type PaymentsActionState = { error?: string; ok?: string } | undefined;
 
@@ -47,4 +49,23 @@ export async function disconnectMpAction(): Promise<PaymentsActionState> {
   if (error) return { error: userFacingDbError(error) };
   revalidatePath("/", "layout");
   return { ok: "Desconectamos Mercado Pago y apagamos las reservas online." };
+}
+
+/**
+ * "Reintentar devolución" (cash.manage). retry_refund valida permiso y estado con la
+ * sesión de la persona; recién después el servidor le pide la devolución a Mercado Pago.
+ */
+export async function retryRefundAction(formData: FormData): Promise<void> {
+  const ctx = await currentStaff();
+  const id = z.uuid().safeParse(formData.get("payment_id"));
+  if (!ctx || !can(ctx, "cash.manage") || !id.success || !paymentsConfig()) return;
+  const supabase = await serverSupabase();
+  const { data, error } = await supabase.rpc("retry_refund", { p_payment: id.data });
+  if (error) {
+    console.error("retry_refund", userFacingDbError(error));
+    return;
+  }
+  const row = (data as Array<{ refund_id: string; account_id: string; provider_payment_id: string }>)[0];
+  if (row) await processRefund(row.refund_id, row.account_id, row.provider_payment_id);
+  revalidatePath("/admin/pagos/movimientos");
 }
