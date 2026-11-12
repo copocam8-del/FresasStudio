@@ -7,9 +7,10 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --font-heading: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-cormorant), ui-serif, Georgia, serif;
+  --font-serif: var(--font-cormorant), ui-serif, Georgia, serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -40,6 +41,14 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-status-ok: var(--status-ok);
+  --color-status-ok-foreground: var(--status-ok-foreground);
+  --color-status-pending: var(--status-pending);
+  --color-status-pending-foreground: var(--status-pending-foreground);
+  --color-status-cancel: var(--status-cancel);
+  --color-status-cancel-foreground: var(--status-cancel-foreground);
+  --color-status-neutral: var(--status-neutral);
+  --color-status-neutral-foreground: var(--status-neutral-foreground);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -50,86 +59,61 @@
 }
 
 /*
- * Tema por defecto de Cleo: beige, marrón, dorado y blanco.
+ * Tema de Cleo (único, oscuro): negro cálido, champagne / rosado dorado, seda y vidrio.
+ * Colores medidos sobre docs/diseno/ref-*.png (ver docs/diseno-plan.md §1).
  *
  * Cada estudio puede reemplazar --primary, --accent y --background con su marca
  * (tenant_settings.brand); lo que no define usa estos valores.
  *
  * Contraste (lo verifica src/lib/theme.test.ts):
- *  - todo par texto/fondo >= 4.5:1, en claro y oscuro;
+ *  - todo par texto/fondo >= 4.5:1 (incluidas las pastillas de estado);
  *  - bordes de campos y anillo de foco >= 3:1;
  *  - --gold es SOLO acento (bordes, íconos, detalles, texto grande): >= 3:1 contra el
  *    fondo, nunca texto chico. No existe --gold-foreground a propósito.
  */
 :root {
-  --background: oklch(0.975 0.012 85);         /* beige muy claro */
-  --foreground: oklch(0.28 0.03 60);           /* marrón oscuro */
-  --card: oklch(1 0 0);                        /* blanco */
-  --card-foreground: oklch(0.28 0.03 60);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.28 0.03 60);
-  --primary: oklch(0.4 0.055 55);              /* marrón */
-  --primary-foreground: oklch(0.99 0.005 85);
-  --secondary: oklch(0.93 0.025 80);           /* beige */
-  --secondary-foreground: oklch(0.3 0.04 55);
-  --muted: oklch(0.945 0.018 80);
-  --muted-foreground: oklch(0.47 0.03 60);
-  --accent: oklch(0.93 0.03 85);               /* beige (hover) */
-  --accent-foreground: oklch(0.3 0.04 55);
-  --gold: oklch(0.64 0.12 80);                 /* dorado: solo acento */
-  --destructive: oklch(0.52 0.17 30);
-  --border: oklch(0.88 0.025 75);
-  --input: oklch(0.62 0.035 65);               /* borde de campos: >= 3:1 */
-  --ring: oklch(0.6 0.11 75);                  /* foco dorado oscuro: >= 3:1 */
-  --chart-1: oklch(0.4 0.055 55);
-  --chart-2: oklch(0.64 0.12 80);
-  --chart-3: oklch(0.58 0.06 50);
-  --chart-4: oklch(0.82 0.05 80);
-  --chart-5: oklch(0.3 0.03 55);
-  --radius: 0.75rem;
-  --sidebar: oklch(0.96 0.015 80);
-  --sidebar-foreground: oklch(0.28 0.03 60);
-  --sidebar-primary: oklch(0.4 0.055 55);
-  --sidebar-primary-foreground: oklch(0.99 0.005 85);
-  --sidebar-accent: oklch(0.92 0.03 82);
-  --sidebar-accent-foreground: oklch(0.3 0.04 55);
-  --sidebar-border: oklch(0.88 0.025 75);
-  --sidebar-ring: oklch(0.6 0.11 75);
-}
-
-.dark {
-  --background: oklch(0.19 0.012 60);          /* espresso */
-  --foreground: oklch(0.95 0.012 85);          /* marfil */
-  --card: oklch(0.23 0.015 60);
-  --card-foreground: oklch(0.95 0.012 85);
-  --popover: oklch(0.23 0.015 60);
-  --popover-foreground: oklch(0.95 0.012 85);
-  --primary: oklch(0.86 0.045 80);             /* beige claro */
-  --primary-foreground: oklch(0.22 0.025 60);
-  --secondary: oklch(0.29 0.02 60);
-  --secondary-foreground: oklch(0.93 0.02 80);
-  --muted: oklch(0.27 0.015 60);
-  --muted-foreground: oklch(0.76 0.025 75);
-  --accent: oklch(0.3 0.025 65);
-  --accent-foreground: oklch(0.95 0.012 85);
-  --gold: oklch(0.78 0.12 85);
-  --destructive: oklch(0.7 0.15 30);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 35%);
-  --ring: oklch(0.72 0.11 82);
-  --chart-1: oklch(0.86 0.045 80);
-  --chart-2: oklch(0.78 0.12 85);
-  --chart-3: oklch(0.66 0.06 55);
-  --chart-4: oklch(0.55 0.04 70);
-  --chart-5: oklch(0.93 0.02 85);
-  --sidebar: oklch(0.21 0.014 60);
-  --sidebar-foreground: oklch(0.95 0.012 85);
-  --sidebar-primary: oklch(0.86 0.045 80);
-  --sidebar-primary-foreground: oklch(0.22 0.025 60);
-  --sidebar-accent: oklch(0.29 0.02 60);
-  --sidebar-accent-foreground: oklch(0.93 0.02 80);
-  --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.72 0.11 82);
+  --background: #0d0a09;                       /* negro cálido */
+  --foreground: #f4ece6;                       /* marfil */
+  --card: #171210;
+  --card-foreground: #f4ece6;
+  --popover: #1b1513;
+  --popover-foreground: #f4ece6;
+  --primary: #d8b9a4;                          /* champagne */
+  --primary-foreground: #1c130f;
+  --secondary: #211a17;
+  --secondary-foreground: #f4ece6;
+  --muted: #211a17;
+  --muted-foreground: #b3a49b;
+  --accent: #2a211e;                           /* hover de filas e ítems */
+  --accent-foreground: #f4ece6;
+  --gold: #c9a48c;                             /* rosado dorado: solo acento */
+  --destructive: #f0918a;
+  --border: oklch(0.83 0.04 50 / 14%);         /* borde fino champagne */
+  --input: #76665e;                            /* borde de campos: >= 3:1 */
+  --ring: #e2c4b0;
+  --chart-1: #d8b9a4;
+  --chart-2: #c9a48c;
+  --chart-3: #a9dcb4;
+  --chart-4: #8f7a6e;
+  --chart-5: #f4ece6;
+  --radius: 0.875rem;
+  --sidebar: #120e0c;
+  --sidebar-foreground: #f4ece6;
+  --sidebar-primary: #d8b9a4;
+  --sidebar-primary-foreground: #1c130f;
+  --sidebar-accent: #2a211e;
+  --sidebar-accent-foreground: #f4ece6;
+  --sidebar-border: oklch(0.83 0.04 50 / 14%);
+  --sidebar-ring: #e2c4b0;
+  --status-ok: #22362a;                        /* Confirmado */
+  --status-ok-foreground: #a9dcb4;
+  --status-pending: #d8b9a4;                   /* Pendiente */
+  --status-pending-foreground: #2a1c15;
+  --status-cancel: #4a2422;                    /* Cancelado / Venció */
+  --status-cancel-foreground: #f6b3ad;
+  --status-neutral: #2a2220;                   /* online, manual, prueba */
+  --status-neutral-foreground: #ddd0c8;
+  color-scheme: dark;
 }
 
 @layer base {
@@ -144,5 +128,36 @@
   }
   h1, h2, h3, h4 {
     @apply font-heading tracking-tight;
+  }
+  /* Cormorant trae números "antiguos" (el 11 parece II): en la serif, números alineados. */
+  h1, h2, h3, h4, .font-serif, .font-heading {
+    font-variant-numeric: lining-nums;
+  }
+}
+
+@layer components {
+  /* Tarjeta de vidrio: fondo de tarjeta translúcido, desenfoque y borde fino champagne. */
+  .glass {
+    background:
+      linear-gradient(160deg, oklch(0.83 0.04 50 / 7%), transparent 40%),
+      color-mix(in oklab, var(--card) 78%, transparent);
+    border: 1px solid var(--border);
+    box-shadow: inset 0 1px 0 oklch(0.95 0.02 60 / 6%), 0 18px 40px -24px oklch(0 0 0 / 80%);
+    backdrop-filter: blur(14px);
+  }
+  /* Botón con el degradé champagne de las referencias. Sale de --primary, así respeta
+     el color principal de cada estudio (el texto encima sigue siendo legible: ±10%). */
+  .champagne {
+    background: linear-gradient(180deg,
+      color-mix(in oklab, var(--primary), white 12%),
+      color-mix(in oklab, var(--primary), black 8%));
+    color: var(--primary-foreground);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }

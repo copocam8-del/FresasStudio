@@ -1,10 +1,19 @@
-import type { Metadata } from "next";
-import { Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Cormorant_Garamond, Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 
-// Tipografía por defecto de Cleo: moderna y muy legible en móvil.
-const jakarta = Plus_Jakarta_Sans({
-  variable: "--font-jakarta",
+// Tipografías de Cleo (docs/diseno-plan.md §2). next/font las sirve desde el propio
+// dominio: el navegador no le pide nada a Google.
+// Serif elegante (parecida al logotipo) para títulos, nombres de estudio y números.
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+});
+
+// Sans moderna para textos, botones y formularios.
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
 });
 
@@ -14,14 +23,16 @@ const geistMono = Geist_Mono({
 });
 
 // Sin título por defecto: cada sección define el suyo. Así nunca se filtra "Cleo"
-// (ni nada genérico) en el sitio o el panel de un estudio, que son de marca blanca.
+// (ni nada genérico) en el título del sitio o el panel de un estudio.
 export const metadata: Metadata = {};
+
+export const viewport: Viewport = { themeColor: "#0d0a09", colorScheme: "dark" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="es-AR"
-      className={`${jakarta.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${cormorant.variable} ${outfit.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
