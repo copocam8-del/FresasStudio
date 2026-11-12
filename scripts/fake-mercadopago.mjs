@@ -16,7 +16,9 @@ const rand = () => randomBytes(12).toString("hex");
 export function startFakeMercadoPago(port = FAKE_PORT) {
   const S = {
     codes: new Map(), access: new Map(), refresh: new Map(), prefs: new Map(), payments: new Map(),
-    refunds: [], failRefunds: false, revoked: false, refreshCount: 0, nextPayment: 70000001,
+    refunds: [], failRefunds: false, revoked: false, refreshCount: 0,
+    // Como en Mercado Pago, un id de pago nunca se repite (tampoco entre corridas del e2e).
+    nextPayment: Date.now() * 10,
   };
 
   const issue = (user) => {

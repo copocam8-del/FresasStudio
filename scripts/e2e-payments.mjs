@@ -93,6 +93,7 @@ async function book(sb) {
         p_accepted_policy_version: studio[0].policy_version, p_phone: "11 5000-0099",
       });
       if (!error) return data[0].code;
+      if (!/ocupar|no está disponible/.test(error.message)) throw new Error(`No se pudo reservar: ${error.message}`);
     }
   }
   throw new Error("No encontré horarios libres para reservar");
@@ -109,9 +110,9 @@ async function payButton(code, cookies) {
 }
 
 /** Conecta Mercado Pago desde el panel, siguiendo todas las redirecciones. */
-async function connectFlow(cookies) {
+async function connectFlow(cookies, button = "Conectar Mercado Pago") {
   const page = await req(F, "/admin/pagos", { cookies });
-  const fd = formFields(page.html, "Mercado Pago");
+  const fd = formFields(page.html, button);
   const r1 = await req(F, "/admin/pagos", { method: "POST", body: fd, cookies });
   const toMp = r1.location ?? "";
   const r2 = await fetch(toMp, { redirect: "manual" });
@@ -154,7 +155,7 @@ try {
   let st = await status();
   ok(st?.status === "connected" && st.mp_nickname === "VENDEDOR-PRUEBA-E2E" && st.live_mode === false, "estado: conectada (cuenta de prueba)");
   r = await req(F, "/admin/pagos", { cookies: ownerCookies });
-  ok(r.html.includes("Conectado como") && r.html.includes("Cuenta de prueba"), "panel: «Conectado como…» y aviso de cuenta de prueba");
+  ok(strip(r.html).includes("Conectado como") && r.html.includes("Cuenta de prueba"), "panel: «Conectado como…» y aviso de cuenta de prueba");
 
   r = await req(F, flow.vueltaPath, { cookies: ownerCookies });
   ok((r.location ?? "").endsWith("error=vencido"), "repetir la vuelta (mismo state): no sirve");
@@ -295,7 +296,7 @@ try {
   r = await req(F, "/admin/pagos", { cookies: ownerCookies });
   ok(r.html.includes("Hay que volver a conectar"), "panel: avisa que hay que volver a conectar");
   await fakePost("/__reset");
-  const again = await connectFlow(ownerCookies);
+  const again = await connectFlow(ownerCookies, "Volver a conectar");
   ok(again.final.endsWith("ok=conectado") && (await status())?.status === "connected", "volver a conectar: conectada otra vez");
 
   // -------------------------------------------------------------------
