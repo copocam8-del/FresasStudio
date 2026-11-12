@@ -173,6 +173,28 @@ end $$;
 revoke execute on function public.dev_simulate_deposit_payment(text, text) from public, anon;
 grant execute on function public.dev_simulate_deposit_payment(text, text) to authenticated;
 
+-- SOLO DESARROLLO: después del e2e de Mercado Pago (que conecta y desconecta una cuenta
+-- simulada), deja el estudio como lo deja este seed: "pagos conectados" sin cuenta real,
+-- para que el pago simulado de los otros e2e siga funcionando. Solo payments.manage y
+-- solo si no hay una cuenta de Mercado Pago activa. En producción NO existe.
+create or replace function public.dev_restore_seed_payments(p_slug text)
+returns void
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_tenant uuid;
+begin
+  select id into v_tenant from public.tenants where slug = lower(btrim(p_slug));
+  if v_tenant is null or not app.can(v_tenant, 'payments.manage') then
+    raise exception 'No tenés permiso' using errcode = '42501';
+  end if;
+  if exists (select 1 from public.payment_accounts where tenant_id = v_tenant and status <> 'disconnected') then
+    return;
+  end if;
+  update public.tenant_settings set payments_connected = true, online_booking_enabled = true where tenant_id = v_tenant;
+end $$;
+revoke execute on function public.dev_restore_seed_payments(text) from public, anon;
+grant execute on function public.dev_restore_seed_payments(text) to authenticated;
+
 -- =====================================================================
 -- Clientas de prueba para el e2e de reservas (10, para la carrera simultánea).
 -- Mismo formato que las usuarias del principio: pueden iniciar sesión. Solo desarrollo.
