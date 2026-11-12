@@ -5,7 +5,7 @@ import { Field, FormMessage, SubmitButton } from "@/components/form/form";
 import { Label } from "@/components/ui/label";
 import { createManualBookingAction, type TurnoState } from "../actions";
 
-const select = "h-11 w-full rounded-lg border border-input bg-background px-3 text-base text-foreground";
+const select = "h-11 w-full rounded-xl border border-input/80 bg-[#141010]/80 px-3 text-base text-foreground";
 
 export function ManualBookingForm({
   clients,

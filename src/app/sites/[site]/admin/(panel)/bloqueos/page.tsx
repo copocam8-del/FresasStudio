@@ -21,7 +21,7 @@ export default async function BlocksPage({ params }: PageProps<"/sites/[site]/ad
         description="Feriados, vacaciones, días libres y horarios en los que no se atiende."
       />
       {canEdit && (
-        <section aria-labelledby="nuevo-bloqueo" className="flex flex-col gap-4 rounded-xl border bg-card p-5">
+        <section aria-labelledby="nuevo-bloqueo" className="flex flex-col gap-4 glass rounded-[1.1rem] p-5">
           <h2 id="nuevo-bloqueo" className="text-lg font-semibold">Nuevo bloqueo</h2>
           <BlockForm professionals={active} today={todayIn(ctx.studio.timezone)} />
         </section>

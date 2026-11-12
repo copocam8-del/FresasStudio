@@ -84,12 +84,16 @@ export function PanelNav({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  // Activo: el ítem cuya dirección coincide más larga (Pagos ≠ Mercado Pago).
+  const activeHref = items
+    .filter((it) => isActive(pathname, it.href, it.href === "/admin"))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
   const list = (
     <ul className="flex flex-col gap-[0.3rem]">
       {items.map((it) => {
         const Icon = ICONS[it.icon];
-        const active = isActive(pathname, it.href, it.href === "/admin");
+        const active = it.href === activeHref;
         return (
           <li key={it.href}>
             <Link
@@ -97,7 +101,7 @@ export function PanelNav({
               aria-current={active ? "page" : undefined}
               onClick={() => setOpen(false)}
               className={cn(
-                "flex min-h-[3.4rem] items-center gap-4 rounded-[0.9rem] px-[1.4rem] text-[0.95rem] transition-colors",
+                "flex min-h-[3.15rem] items-center gap-4 rounded-[0.9rem] px-[1.4rem] text-[0.95rem] transition-colors",
                 active ? "champagne-x font-medium" : "text-sidebar-foreground hover:bg-white/5",
               )}
             >
@@ -145,9 +149,9 @@ export function PanelNav({
       {/* Escritorio: menú lateral fijo */}
       <aside className="sticky top-0 hidden h-dvh w-[14.75rem] shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-[linear-gradient(180deg,#1d1716,#151111_45%,#171211)] lg:flex">
         <SilkSidebar />
-        <div className="relative flex justify-center px-4 pt-14 pb-10">{brand}</div>
-        <nav aria-label="Secciones del panel" className="relative overflow-y-auto px-[1.2rem]">{list}</nav>
-        <div className="relative mt-auto px-[1.2rem] pb-12">{footer}</div>
+        <div className="relative flex shrink-0 justify-center px-4 pt-10 pb-7">{brand}</div>
+        <nav aria-label="Secciones del panel" className="relative min-h-0 flex-1 overflow-y-auto px-[1.2rem]">{list}</nav>
+        <div className="relative shrink-0 px-[1.2rem] pt-3 pb-8">{footer}</div>
       </aside>
     </>
   );

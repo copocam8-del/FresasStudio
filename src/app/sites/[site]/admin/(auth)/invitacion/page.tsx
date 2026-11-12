@@ -5,7 +5,7 @@ import { AuthShell } from "@/components/auth/auth-shell";
 import { Button } from "@/components/ui/button";
 import { getUser } from "@/lib/auth";
 import { getStudio } from "@/lib/studio";
-import { studioLogo } from "@/lib/studio-brand";
+import { studioBrand } from "@/lib/studio-brand";
 import { serverSupabase } from "@/lib/supabase/server";
 import { invitationTokenSchema } from "@/lib/validation";
 import { signOutAction } from "../../actions";
@@ -50,7 +50,7 @@ export default async function InvitationPage({ params, searchParams }: PageProps
   }
 
   const shell = (children: React.ReactNode, description?: React.ReactNode) => (
-    <AuthShell brandName={studio.name} logoUrl={studioLogo(studio)} title="Invitación al equipo" description={description}>
+    <AuthShell brand={studioBrand(studio)} title="Invitación al equipo" description={description}>
       {children}
     </AuthShell>
   );

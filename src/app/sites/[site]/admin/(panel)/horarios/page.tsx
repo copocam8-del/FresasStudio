@@ -21,7 +21,7 @@ export default async function StudioHoursPage({ params }: PageProps<"/sites/[sit
             : "Solo lectura: no tenés permiso para cambiar el horario del estudio."
         }
       />
-      <div className="rounded-xl border bg-card p-5">
+      <div className="glass rounded-[1.1rem] p-5">
         <WeekHoursEditor initial={hours} canEdit={canEdit} />
       </div>
     </>

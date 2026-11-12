@@ -40,7 +40,7 @@ export default async function BookStep1({ params }: PageProps<"/sites/[site]/res
     <BookingShell studio={studio} step={1} title="¿Qué te querés hacer?">
       {groups.map((g) => (
         <section key={g.key} aria-labelledby={`g-${g.key}`} className="flex flex-col gap-2">
-          <h2 id={`g-${g.key}`} className="font-semibold text-foreground">
+          <h2 id={`g-${g.key}`} className="text-sm font-medium tracking-[0.14em] text-[#e4d3c8] uppercase">
             {g.title}
           </h2>
           <ul className="flex flex-col gap-2">
@@ -48,7 +48,7 @@ export default async function BookStep1({ params }: PageProps<"/sites/[site]/res
               <li key={s.id}>
                 <Link
                   href={stepUrl(s.id)}
-                  className="flex min-h-14 items-center justify-between gap-3 rounded-xl border bg-card p-4 hover:bg-accent"
+                  className="flex min-h-14 items-center justify-between gap-3 glass rounded-[1.1rem] p-4 hover:bg-accent"
                 >
                   <span className="flex flex-col">
                     <span className="font-medium text-card-foreground">{s.name}</span>

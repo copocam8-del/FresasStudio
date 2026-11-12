@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { getStaffContext, getUser } from "@/lib/auth";
 import { getStudio } from "@/lib/studio";
-import { studioLogo } from "@/lib/studio-brand";
+import { studioBrand } from "@/lib/studio-brand";
 import { safeNext } from "@/lib/validation";
 import { LoginForm } from "./login-form";
 
@@ -26,7 +26,7 @@ export default async function LoginPage({ params, searchParams }: PageProps<"/si
   const error = typeof sp.error === "string" ? LINK_ERRORS[sp.error] : undefined;
 
   return (
-    <AuthShell brandName={studio.name} logoUrl={studioLogo(studio)} title="Ingresar al panel" description="Solo para el equipo del estudio.">
+    <AuthShell brand={studioBrand(studio)} title="Ingresar al panel" description="Solo para el equipo del estudio.">
       <LoginForm next={next} initialError={error} />
     </AuthShell>
   );

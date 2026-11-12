@@ -1,23 +1,21 @@
 import { UserRound } from "lucide-react";
 import Link from "next/link";
-import { StudioWordmark } from "@/components/cleo/brand";
+import { BrandLarge, type BrandInfo } from "@/components/cleo/brand";
 import { BottomNav, type NavItem } from "@/components/cleo/nav";
 import { SilkHero } from "@/components/cleo/silk";
 
 /**
  * Marco del sitio de un estudio para la clienta (celular primero), como la referencia:
- * seda brillante arriba a la derecha, marca grande del estudio, botón de cuenta y barra
+ * seda brillante arriba a la derecha, marca (Cleo o la propia del estudio), botón de cuenta y barra
  * de navegación abajo. Solo secciones que existen (D6).
  */
 export function SiteChrome({
-  studioName,
-  logoSrc,
+  brand,
   signedIn,
   bookingEnabled,
   children,
 }: {
-  studioName: string;
-  logoSrc: string | null;
+  brand: BrandInfo;
   signedIn: boolean;
   bookingEnabled: boolean;
   children: React.ReactNode;
@@ -30,12 +28,12 @@ export function SiteChrome({
   ];
   return (
     <div className="relative isolate flex flex-1 flex-col overflow-x-clip bg-[radial-gradient(120%_60%_at_50%_0%,#151112,transparent_70%)]">
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 mx-auto h-[300px] max-w-2xl overflow-hidden">
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[300px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_72%,transparent)]">
         <SilkHero />
       </div>
       <header className="mx-auto flex w-full max-w-2xl items-start justify-between gap-3 px-[1.4rem] pt-7">
         <Link href="/" className="min-w-0 rounded-xl focus-visible:outline-2 focus-visible:outline-ring">
-          <StudioWordmark name={studioName} logoSrc={logoSrc} />
+          <BrandLarge brand={brand} />
         </Link>
         <Link
           href={signedIn ? "/mi-ficha" : "/ingresar"}

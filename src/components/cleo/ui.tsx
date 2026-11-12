@@ -145,8 +145,9 @@ export function ActionTile({
       <TileSheen variant={sheen} />
       <Icon aria-hidden strokeWidth={1.25} className="relative mt-1 size-[2.75rem] text-[#f1e1d6]" />
       <span className="relative flex items-end justify-between gap-2">
-        <span className="flex min-w-0 flex-col">
-          <span className="text-[1.1rem] leading-snug font-semibold text-foreground">{title}</span>
+        {/* El texto nunca pasa por debajo de la flecha ni de los reflejos de la esquina */}
+        <span className="flex min-w-0 max-w-[calc(100%-2.75rem)] flex-col">
+          <span className="text-[1.02rem] leading-snug font-semibold text-foreground min-[400px]:text-[1.1rem]">{title}</span>
           <span className="text-[0.88rem] leading-snug text-[#e4d8d0]">{text}</span>
         </span>
         <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-[#5b4d48] bg-[#2a2324]/90">

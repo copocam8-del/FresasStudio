@@ -47,17 +47,17 @@ export default async function NewTurnoPage({ params, searchParams }: PageProps<"
       <PageHeader title="Turno manual" description="Para cuando la clienta reserva por WhatsApp o por teléfono." />
 
       {can(ctx, "clients.read") && (
-        <form className="flex items-end gap-2 rounded-xl border bg-card p-4">
+        <form className="flex items-end gap-2 glass rounded-[1.1rem] p-4">
           <label className="flex flex-1 flex-col gap-2 text-sm font-medium">
             Buscar clienta
             <input name="q" defaultValue={q} placeholder="Nombre, teléfono o email" minLength={2}
-              className="h-11 rounded-lg border border-input bg-background px-3 text-base font-normal" />
+              className="h-11 rounded-xl border border-input/80 bg-[#141010]/80 px-3 text-base font-normal" />
           </label>
           <Button type="submit" variant="outline" className="h-11">Buscar</Button>
         </form>
       )}
 
-      <div className="rounded-xl border bg-card p-5">
+      <div className="glass rounded-[1.1rem] p-5">
         <ManualBookingForm
           clients={clients}
           searched={q.length >= 2}

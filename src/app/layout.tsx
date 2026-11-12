@@ -33,6 +33,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="es-AR"
+      // La bienvenida marca data-welcome-seen antes de pintar (welcome.tsx).
+      suppressHydrationWarning
       className={`${cormorant.variable} ${outfit.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">

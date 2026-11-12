@@ -17,26 +17,29 @@ select tests.ok(abs(app.contrast_ratio('#0000ff', '#ffffff') - 8.59) < 0.01, 'co
 -- Colores válidos e inválidos (la dueña de A edita su marca)
 -- ---------------------------------------------------------------------
 :as_owner_a
-update public.tenant_settings set brand = '{"primary": "#6B4F3A", "accent": "#b28324", "background": "#faf6f0"}' where tenant_id = :A;
-select tests.ok((select brand = '{"primary": "#6b4f3a", "accent": "#b28324", "background": "#faf6f0"}'::jsonb
+update public.tenant_settings set brand = '{"primary": "#D4A5A5", "accent": "#c9a48c", "background": "#1a1416", "enabled": true}' where tenant_id = :A;
+select tests.ok((select brand = '{"primary": "#d4a5a5", "accent": "#c9a48c", "background": "#1a1416", "enabled": true}'::jsonb
                  from public.tenant_settings where tenant_id = :A),
                 'marca válida: se guarda normalizada (hex en minúsculas)');
 update public.tenant_settings set brand = '{"primary": "#e91e63"}' where tenant_id = :A;
 select tests.ok((select brand ->> 'primary' = '#e91e63' from public.tenant_settings where tenant_id = :A),
                 'marca válida: rosa medio (texto negro encima)');
 update public.tenant_settings set brand = '{"primary": "#888888"}' where tenant_id = :A;
-update public.tenant_settings set brand = '{"primary": "#1f3a5f", "background": "#fff0f5"}' where tenant_id = :A;
-update public.tenant_settings set brand = '{"accent": "#8a5a00"}' where tenant_id = :A;
+update public.tenant_settings set brand = '{"primary": "#f8bbd0", "background": "#1f1a2e"}' where tenant_id = :A;
+update public.tenant_settings set brand = '{"accent": "#b28324"}' where tenant_id = :A;
+update public.tenant_settings set brand = '{"enabled": false}' where tenant_id = :A;
 update public.tenant_settings set brand = '{}' where tenant_id = :A;
-select tests.ok(true, 'marca válida: gris medio, azul sobre rosa claro, acento ocre y marca vacía');
+select tests.ok(true, 'marca válida: gris medio, rosa sobre violeta oscuro, acento ocre, marca apagada y vacía');
+select tests.throws(format($$update public.tenant_settings set brand = '{"enabled": "si"}' where tenant_id = %L$$, :A),
+                    'marca inválida: "marca propia" tiene que ser sí o no', 'sí o no');
 
-select tests.throws(format($$update public.tenant_settings set brand = '{"background": "#333333"}' where tenant_id = %L$$, :A),
-                    'marca inválida: fondo oscuro', 'El fondo es demasiado oscuro');
+select tests.throws(format($$update public.tenant_settings set brand = '{"background": "#f5f0e6"}' where tenant_id = %L$$, :A),
+                    'marca inválida: fondo claro (el tema es oscuro)', 'El fondo es demasiado claro');
 select tests.throws(format($$update public.tenant_settings set brand = '{"background": "#e91e63"}' where tenant_id = %L$$, :A),
-                    'marca inválida: fondo intenso', 'El fondo es demasiado oscuro');
-select tests.throws(format($$update public.tenant_settings set brand = '{"accent": "#f5f0e6"}' where tenant_id = %L$$, :A),
+                    'marca inválida: fondo intenso', 'El fondo es demasiado claro');
+select tests.throws(format($$update public.tenant_settings set brand = '{"accent": "#1a1416"}' where tenant_id = %L$$, :A),
                     'marca inválida: acento casi igual al fondo', 'acento casi no se ve');
-select tests.throws(format($$update public.tenant_settings set brand = '{"primary": "#fbf7ef"}' where tenant_id = %L$$, :A),
+select tests.throws(format($$update public.tenant_settings set brand = '{"primary": "#141012"}' where tenant_id = %L$$, :A),
                     'marca inválida: botón casi igual al fondo', 'no se distinguen del fondo');
 select tests.throws(format($$update public.tenant_settings set brand = '{"primary": "red"}' where tenant_id = %L$$, :A),
                     'marca inválida: color que no es hex', '#rrggbb');

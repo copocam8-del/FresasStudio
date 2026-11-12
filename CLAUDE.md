@@ -2,7 +2,8 @@
 
 # Cleo — reglas del proyecto
 
-**Cleo** es una plataforma SaaS **multi-tenant** y de **marca blanca** para estudios de belleza:
+**Cleo** es una plataforma SaaS **multi-tenant** para estudios de belleza (marca Cleo por defecto
+y marca propia opcional por estudio, ver regla 1b):
 sitio público de cada estudio, Cleo Manager (panel del estudio) y Cleo Admin
 (superadministración). Fresas Studio es el primer estudio cliente. Contexto completo en
 `README.md` y en `docs/` (brief y backlog técnico con IDs como ARC-01, BOOK-05, POL-03).
@@ -48,13 +49,31 @@ sitio público de cada estudio, Cleo Manager (panel del estudio) y Cleo Admin
   (`src/lib/request.ts`, `src/lib/auth.ts`); nunca un slug o `tenant_id` del formulario.
 - El proxy no autoriza: cada página del panel llama a `requireStaff` / `requirePermission`, y
   cada acción vuelve a verificar con `currentStaff()` + `can()`.
-- **Marca blanca:** en todo lo que cuelga de `/sites/[site]` no aparece "Cleo" (textos,
-  títulos, errores, 404, íconos). "Cleo" solo en el dominio raíz, Cleo Admin y la pantalla de
-  Google ("Cleo Suite").
+- **Marca (regla definitiva):** por defecto, el sitio y el panel de TODOS los estudios se ven con la
+  marca Cleo (logo completo de Cleo y colores de Cleo). Solo si el estudio activa su **marca
+  propia** en `/admin/marca` (`tenant_settings.brand.enabled = true`) se muestran su nombre grande, su
+  logo y sus colores, con el logo de Cleo chiquito debajo ("by" + logo). Componentes:
+  `src/components/cleo/brand.tsx` y `studioBrand()` (`src/lib/studio-brand.ts`). El título de la
+  pestaña siempre lleva el nombre del estudio. En el seed, Fresas va sin marca propia.
 - Contenido cargado por un estudio se renderiza escapado (sin `dangerouslySetInnerHTML`): el
   sitio público y el panel comparten origen y cookies.
 - Colores: solo hex validados (`src/lib/brand.ts`, y `app.validate_brand` en la base). El
   contraste se controla con tests (`theme.test.ts`); el dorado/acento nunca es texto chico.
+
+## Diseño (tema de Cleo)
+
+- Tema único **oscuro**: negro cálido, champagne / rosado dorado, seda y vidrio, medido sobre
+  `docs/diseno/ref-*.png` (ver `docs/diseno-plan.md` y `docs/diseno/diferencias.md`). Tokens en
+  `src/app/globals.css`; los colores propios de un estudio se validan para fondo oscuro.
+- Componentes en `src/components/cleo/`: `GlassCard`, `StatCard` (con `Sparkline`), `StatusPill`,
+  `ActionTile`, `PageTitle`, `InitialsAvatar`, seda (`silk.tsx`), logo (`cleo-logo.tsx`), menú y barra
+  inferior (`nav.tsx`), calendario del mes y bienvenida (`welcome.tsx`, ≤ 2 s, una vez por sesión).
+- Los degradados SVG compartidos se definen UNA vez (`svg-defs.tsx`): un id repetido dentro de un
+  elemento oculto hace que no se pinte en ningún lado.
+- Nada de números ni gráficos inventados: tarjetas, curvas, calendario y actividad salen de la base
+  y no se muestran si no hay datos. Menús solo con secciones que existen.
+- La decoración (seda, reflejos) nunca pasa por debajo de un texto.
+- Capturas para comparar con las referencias: `node scripts/screenshots.mjs p-` (y `cmp-`).
 
 ## Regla 2 — RLS obligatoria en cada tabla nueva
 

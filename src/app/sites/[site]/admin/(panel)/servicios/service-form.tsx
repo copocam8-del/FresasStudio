@@ -59,7 +59,7 @@ export function ServiceForm({
           id="category_id"
           name="category_id"
           defaultValue={initial.category_id ?? ""}
-          className="h-11 w-full rounded-lg border border-input bg-background px-3 text-base text-foreground"
+          className="h-11 w-full rounded-xl border border-input/80 bg-[#141010]/80 px-3 text-base text-foreground"
         >
           <option value="">Sin categoría</option>
           {categories.map((c) => (
@@ -78,7 +78,7 @@ export function ServiceForm({
           defaultValue={initial.description ?? ""}
           maxLength={1000}
           rows={3}
-          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-base text-foreground"
+          className="w-full rounded-xl border border-input/80 bg-[#141010]/80 px-3 py-2 text-base text-foreground"
         />
       </div>
 
@@ -119,7 +119,7 @@ export function ServiceForm({
           id="buffer_after_minutes"
           name="buffer_after_minutes"
           defaultValue={String(initial.buffer_after_minutes)}
-          className="h-11 w-full rounded-lg border border-input bg-background px-3 text-base text-foreground"
+          className="h-11 w-full rounded-xl border border-input/80 bg-[#141010]/80 px-3 text-base text-foreground"
           aria-describedby="buffer-hint"
         >
           {BUFFERS.map((b) => (

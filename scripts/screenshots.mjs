@@ -7,7 +7,7 @@ import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { F, login } from "./e2e-lib.mjs";
+import { F, login, supabaseAs } from "./e2e-lib.mjs";
 
 const BROWSERS = [
   "C:/Program Files/Google/Chrome/Application/chrome.exe",
@@ -29,6 +29,37 @@ const ALL_SHOTS = [
   { name: "cmp-inicio-clienta", url: `http://${F}/`, width: 426, height: 923, full: false, scale: 2, as: "clienta02@e2e.test", clientLogin: true },
   { name: "cmp-inicio-panel", url: `http://${F}/admin`, width: 1536, height: 1024, full: false, scale: 1, as: "duena@fresasstudio.test" },
 ];
+// Pantallas principales (sprint de diseño): node scripts/screenshots.mjs p-
+const SEMI = "31000000-0000-4000-a000-000000000001";
+const sbClient = await supabaseAs("clienta02@e2e.test");
+const myCode = ((await sbClient.rpc("my_bookings", { p_slug: "fresas" })).data ?? []).find((b) => b.status === "confirmed")?.code;
+const OWNER = "duena@fresasstudio.test";
+const C = "clienta02@e2e.test";
+const m = (name, path, as, extra = {}) => ({ name: `p-${name}`, url: `http://${F}${path}`, width: 390, height: 844, full: true, scale: 2, as, ...extra });
+const d = (name, path, as, extra = {}) => ({ name: `p-${name}`, url: `http://${F}${path}`, width: 1440, height: 900, full: true, scale: 1, as, ...extra });
+ALL_SHOTS.push(
+  m("01-cel-inicio-clienta", "/", C, { clientLogin: true }),
+  m("02-cel-reservar-servicio", "/reservar", C, { clientLogin: true }),
+  m("03-cel-reservar-dia-hora", `/reservar/${SEMI}?p=any`, C, { clientLogin: true }),
+  ...(myCode ? [m("04-cel-mi-reserva", `/reserva/${myCode}`, C, { clientLogin: true })] : []),
+  m("05-cel-mis-turnos", "/mi-ficha", C, { clientLogin: true }),
+  m("06-cel-ingresar", "/ingresar", null),
+  m("07-cel-panel-turnos", "/admin/turnos", OWNER),
+  d("10-esc-panel-inicio", "/admin", OWNER),
+  d("11-esc-panel-turnos", "/admin/turnos", OWNER),
+  d("12-esc-panel-servicios", "/admin/servicios", OWNER),
+  d("13-esc-panel-profesionales", "/admin/profesionales", OWNER),
+  d("14-esc-panel-horarios", "/admin/horarios", OWNER),
+  d("15-esc-panel-equipo", "/admin/equipo", OWNER),
+  d("16-esc-panel-reservas", "/admin/reservas", OWNER),
+  d("17-esc-panel-mercado-pago", "/admin/pagos", OWNER),
+  d("18-esc-panel-pagos", "/admin/pagos/movimientos", OWNER),
+  d("19-esc-panel-marca", "/admin/marca", OWNER),
+  d("20-esc-panel-login", "/admin/login", null),
+  { name: "p-21-esc-cleo", url: "http://localhost:3000/", width: 1440, height: 900, full: false, scale: 1, as: null },
+  { name: "p-22-esc-cleo-admin", url: "http://admin.localhost:3000/login", width: 1440, height: 900, full: false, scale: 1, as: null },
+);
+
 // node scripts/screenshots.mjs [prefijo]  → solo las capturas cuyo nombre empieza así
 const only = process.argv[2];
 const SHOTS = ALL_SHOTS.filter((s) => (only ? s.name.startsWith(only) : !s.name.startsWith("cmp-")));
@@ -71,10 +102,12 @@ const waitFor = (method) => new Promise((resolve) => waiters.push({ method, reso
 
 await send("Page.enable");
 await send("Network.enable");
+// La bienvenida se ve una vez por sesión: en las capturas se da por vista.
+await send("Page.addScriptToEvaluateOnNewDocument", { source: 'try{sessionStorage.setItem("cleo-welcome","1")}catch(e){}' });
 
 for (const s of SHOTS) {
   await send("Network.clearBrowserCookies");
-  const cookies = await login(F, s.as, s.clientLogin ? "/admin/invitacion?token=x" : undefined);
+  const cookies = s.as ? await login(F, s.as, s.clientLogin ? "/admin/invitacion?token=x" : undefined) : {};
   for (const [name, value] of Object.entries(cookies)) {
     await send("Network.setCookie", { name, value, domain: "fresas.localhost", path: "/" });
   }
@@ -90,7 +123,7 @@ for (const s of SHOTS) {
     // inferior) queda abajo como en el celular.
     const { contentSize } = await send("Page.getLayoutMetrics");
     await send("Emulation.setDeviceMetricsOverride", {
-      width: s.width, height: Math.ceil(contentSize.height), deviceScaleFactor: 2, mobile: true,
+      width: s.width, height: Math.ceil(contentSize.height), deviceScaleFactor: s.scale ?? 2, mobile: s.width < 600,
     });
     await new Promise((r) => setTimeout(r, 600));
   }

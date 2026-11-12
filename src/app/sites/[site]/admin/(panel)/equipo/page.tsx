@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { InitialsAvatar, PageTitle, StatusPill } from "@/components/cleo/ui";
 import { Button } from "@/components/ui/button";
 import { can, requirePermission } from "@/lib/auth";
 import { serverSupabase } from "@/lib/supabase/server";
@@ -55,26 +56,27 @@ export default async function TeamPage({ params }: PageProps<"/sites/[site]/admi
 
   return (
     <>
-      <h1 className="text-2xl font-semibold text-foreground">Equipo</h1>
+      <PageTitle title="Equipo" description="Quiénes trabajan en el estudio y qué puede hacer cada una." />
 
       <section aria-labelledby="miembros" className="flex flex-col gap-3">
-        <h2 id="miembros" className="text-lg font-semibold text-foreground">
+        <h2 id="miembros" className="text-[1.05rem] font-normal text-foreground">
           Personas ({(members as Member[]).length})
         </h2>
-        <ul className="flex flex-col divide-y rounded-xl border bg-card">
+        <ul className="grid grid-cols-1 gap-[1.4rem] sm:grid-cols-2 xl:grid-cols-3">
           {(members as Member[]).map((m) => (
-            <li key={m.membership_id} className="flex flex-col gap-1 p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-col">
-                <span className="font-medium text-card-foreground">
+            <li key={m.membership_id} className="glass-strong flex items-center gap-4 rounded-[1.1rem] p-5">
+              <InitialsAvatar name={m.full_name || m.email} className="size-16 text-lg" />
+              <div className="flex min-w-0 flex-col gap-1.5">
+                <span className="truncate text-[1.02rem] font-medium text-foreground">
                   {m.full_name || m.email}
-                  {m.is_me && <span className="text-muted-foreground"> (vos)</span>}
+                  {m.is_me && <span className="text-foreground/75"> (vos)</span>}
                 </span>
-                {m.full_name && <span className="text-sm text-muted-foreground">{m.email}</span>}
+                {m.full_name && <span className="truncate text-sm text-foreground/80">{m.email}</span>}
+                <span className="flex flex-wrap gap-1.5">
+                  <StatusPill status="neutral">{m.role_name}</StatusPill>
+                  {m.status === "suspended" ? <StatusPill status="cancel">Suspendida</StatusPill> : <StatusPill status="ok">Activa</StatusPill>}
+                </span>
               </div>
-              <span className="text-sm text-card-foreground">
-                {m.role_name}
-                {m.status === "suspended" && <span className="text-destructive"> · suspendida</span>}
-              </span>
             </li>
           ))}
         </ul>
@@ -82,9 +84,9 @@ export default async function TeamPage({ params }: PageProps<"/sites/[site]/admi
 
       {canManage && (
         <>
-          <section aria-labelledby="invitar" className="flex flex-col gap-4 rounded-xl border bg-card p-5">
+          <section aria-labelledby="invitar" className="flex flex-col gap-4 glass rounded-[1.1rem] p-5">
             <div className="flex flex-col gap-1">
-              <h2 id="invitar" className="text-lg font-semibold text-card-foreground">
+              <h2 id="invitar" className="text-[1.05rem] font-normal text-card-foreground">
                 Invitar a alguien
               </h2>
               <p className="text-sm text-muted-foreground">
@@ -97,10 +99,10 @@ export default async function TeamPage({ params }: PageProps<"/sites/[site]/admi
 
           {invitations.length > 0 && (
             <section aria-labelledby="pendientes" className="flex flex-col gap-3">
-              <h2 id="pendientes" className="text-lg font-semibold text-foreground">
+              <h2 id="pendientes" className="text-[1.05rem] font-normal text-foreground">
                 Invitaciones pendientes
               </h2>
-              <ul className="flex flex-col divide-y rounded-xl border bg-card">
+              <ul className="flex flex-col divide-y glass rounded-[1.1rem]">
                 {invitations.map((inv) => (
                   <li key={inv.id} className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-col">

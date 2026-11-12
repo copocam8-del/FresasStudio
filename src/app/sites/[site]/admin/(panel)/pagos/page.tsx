@@ -56,10 +56,10 @@ export default async function PaymentsPage({ params, searchParams }: PageProps<"
         description="Las señas de las reservas online se cobran en la cuenta de Mercado Pago del estudio."
         action={can(ctx, "cash.read") ? { href: "/admin/pagos/movimientos", label: "Ver pagos recibidos" } : undefined}
       />
-      {errorMsg && <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">{errorMsg}</p>}
-      {okMsg && <p role="status" className="rounded-lg border bg-secondary p-3 text-sm text-secondary-foreground">{okMsg}</p>}
+      {errorMsg && <p role="alert" className="rounded-2xl border border-[#8d4d49] bg-status-cancel/70 p-3.5 text-status-cancel-foreground text-sm text-destructive">{errorMsg}</p>}
+      {okMsg && <p role="status" className="rounded-2xl border border-border bg-[#1d1716]/85 p-3.5 text-sm text-foreground">{okMsg}</p>}
 
-      <section className="flex flex-col gap-4 rounded-xl border bg-card p-5">
+      <section className="flex flex-col gap-4 glass rounded-[1.1rem] p-5">
         {s?.status === "connected" && (
           <>
             <div className="flex flex-col gap-1">

@@ -55,7 +55,7 @@ export default async function BookStep2and3({ params, searchParams }: PageProps<
           <ul className="flex flex-col gap-2">
             {options.length > 1 && (
               <li>
-                <Link href={stepUrl(service.id, { pro: "any" })} className="flex min-h-14 items-center justify-between gap-3 rounded-xl border-2 border-primary bg-card p-4 hover:bg-accent">
+                <Link href={stepUrl(service.id, { pro: "any" })} className="glass flex min-h-16 items-center justify-between gap-3 rounded-[1.1rem] !border-[#d7baaa]/70 p-4 hover:brightness-110">
                   <span className="flex flex-col">
                     <span className="font-medium text-card-foreground">Cualquiera disponible</span>
                     <span className="text-sm text-muted-foreground">Te mostramos todos los horarios libres</span>
@@ -68,7 +68,7 @@ export default async function BookStep2and3({ params, searchParams }: PageProps<
               const photo = catalogPhotoUrl(o.photo_path);
               return (
                 <li key={o.professional_id}>
-                  <Link href={stepUrl(service.id, { pro: o.professional_id })} className="flex min-h-14 items-center gap-3 rounded-xl border bg-card p-4 hover:bg-accent">
+                  <Link href={stepUrl(service.id, { pro: o.professional_id })} className="flex min-h-14 items-center gap-3 glass rounded-[1.1rem] p-4 hover:bg-accent">
                     {photo ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={photo} alt="" className="size-11 rounded-full object-cover" />
@@ -128,8 +128,8 @@ export default async function BookStep2and3({ params, searchParams }: PageProps<
               aria-current={isSel ? "date" : undefined}
               aria-disabled={empty || undefined}
               tabIndex={empty ? -1 : undefined}
-              className={`flex min-h-14 min-w-16 shrink-0 flex-col items-center justify-center rounded-xl border px-2 text-sm ${
-                isSel ? "border-primary bg-primary text-primary-foreground" : empty ? "pointer-events-none bg-muted text-muted-foreground opacity-60" : "bg-card text-card-foreground hover:bg-accent"
+              className={`flex min-h-16 min-w-[4.5rem] shrink-0 flex-col items-center justify-center rounded-2xl border px-2 text-sm ${
+                isSel ? "champagne border-transparent font-semibold" : empty ? "pointer-events-none border-[#2b2321] bg-[#141010] text-foreground/40" : "border-[#4a3f3c] bg-[#1a1516]/85 text-foreground hover:bg-[#241d1c]"
               }`}
             >
               {formatDayShort(d.day)}
@@ -139,7 +139,7 @@ export default async function BookStep2and3({ params, searchParams }: PageProps<
         })}
         {nextFrom < horizonEnd && (
           <Link href={`/reservar/${service.id}?${new URLSearchParams({ p: pro, desde: nextFrom }).toString()}`}
-            className="flex min-h-14 shrink-0 items-center rounded-xl border bg-card px-3 text-sm text-card-foreground hover:bg-accent">
+            className="flex min-h-14 shrink-0 items-center glass rounded-[1.1rem] px-3 text-sm text-card-foreground hover:bg-accent">
             Más días →
           </Link>
         )}
@@ -151,14 +151,14 @@ export default async function BookStep2and3({ params, searchParams }: PageProps<
         <p className="text-foreground">Ese día no quedan horarios libres.</p>
       ) : (
         <section aria-labelledby="horarios" className="flex flex-col gap-2">
-          <h2 id="horarios" className="font-semibold text-foreground">
+          <h2 id="horarios" className="text-sm font-medium tracking-[0.14em] text-[#e4d3c8] uppercase">
             {formatDayShort(selected)}
           </h2>
           <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
             {slots.map((s) => (
               <li key={s}>
                 <Link href={confirmUrl(service.id, pro, s)}
-                  className="flex h-12 items-center justify-center rounded-lg border bg-card font-medium text-card-foreground hover:bg-accent">
+                  className="flex h-12 items-center justify-center rounded-2xl border border-[#4a3f3c] bg-[#1a1516]/85 font-medium text-foreground tabular-nums hover:border-transparent hover:bg-[linear-gradient(180deg,#ead3c4,#c9ab98)] hover:text-[#1f140e]">
                   {formatTime(s, ctx.timezone)}
                 </Link>
               </li>

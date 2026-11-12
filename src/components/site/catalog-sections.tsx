@@ -82,7 +82,7 @@ export function CatalogSections({ catalog, bookingEnabled }: { catalog: PublicCa
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={photo} alt={`Foto de ${p.display_name}`} className="size-16 shrink-0 rounded-full object-cover" />
                   ) : (
-                    <span aria-hidden className="flex size-16 shrink-0 items-center justify-center rounded-full bg-secondary text-xl font-semibold text-secondary-foreground">
+                    <span aria-hidden className="flex size-16 shrink-0 items-center justify-center rounded-full border border-[#4a3d39] bg-[radial-gradient(circle_at_30%_25%,#5a4841,#241c1a)] font-serif text-2xl text-[#efdcd0]">
                       {p.display_name.slice(0, 1).toUpperCase()}
                     </span>
                   )}

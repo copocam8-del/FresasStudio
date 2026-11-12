@@ -139,8 +139,8 @@ try {
   // Conectar Mercado Pago (OAuth con PKCE)
   // -------------------------------------------------------------------
   let r = await req(F, "/admin/pagos", { cookies: ownerCookies });
-  ok(r.status === 200 && r.html.includes("Mercado Pago no está conectado") && r.html.includes("Conectar Mercado Pago") && !/Cleo/.test(r.html),
-     "panel: Mercado Pago sin conectar, con el botón (sin Cleo)");
+  ok(r.status === 200 && r.html.includes("Mercado Pago no está conectado") && r.html.includes("Conectar Mercado Pago") && r.html.includes('aria-label="Cleo"'),
+     "panel: Mercado Pago sin conectar, con el botón");
   const manager = await login(F, "encargada@fresasstudio.test");
   r = await req(F, "/admin/pagos", { cookies: manager });
   ok(r.status === 200 && !r.html.includes(">Conectar Mercado Pago<") && r.html.includes("Solo la dueña"), "encargada: ve el estado pero no puede conectar (P5)");
@@ -176,7 +176,7 @@ try {
   const code = await book(sb2);
   const b0 = await booking(sb2, code);
   r = await req(F, `/reserva/${code}`, { cookies: c2 });
-  ok(strip(r.html).includes("Pagar seña") && r.html.includes("con Mercado Pago") && !/Cleo/.test(r.html), "reserva: botón «Pagar seña … con Mercado Pago»");
+  ok(strip(r.html).includes("Pagar seña") && r.html.includes("con Mercado Pago") && r.html.includes('aria-label="Cleo"'), "reserva: botón «Pagar seña … con Mercado Pago»");
   const checkout = await payButton(code, c2);
   ok(checkout?.startsWith(`${FAKE}/checkout/`), "pagar seña: manda al Checkout de Mercado Pago");
   const prefId = checkout.split("/checkout/")[1];
@@ -268,7 +268,7 @@ try {
   r = await req(F, "/admin/pagos/movimientos", { cookies: ownerCookies });
   const mov = strip(r.html);
   ok(r.status === 200 && mov.includes("Pagos recibidos") && mov.includes(String(payId)) && mov.includes("Confirmó la reserva")
-     && mov.includes("Devuelto") && mov.includes("Comisión Mercado Pago") && !/Cleo/.test(r.html),
+     && mov.includes("Devuelto") && mov.includes("Comisión Mercado Pago") && r.html.includes('aria-label="Cleo"'),
      "panel: pagos recibidos con resultado, comisión y devoluciones");
   r = await req(F, "/admin/pagos/movimientos/csv", { cookies: ownerCookies });
   ok(r.status === 200 && r.html.includes("Operación Mercado Pago") && r.html.includes(String(payId)) && r.html.includes(String(pay4)),

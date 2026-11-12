@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { StudioMark, StudioWordmark } from "@/components/cleo/brand";
+import { BrandCompact, BrandLarge } from "@/components/cleo/brand";
 import { PanelNav, SignOutIcon, type NavItem } from "@/components/cleo/nav";
 import { SilkPanelTop } from "@/components/cleo/silk";
 import { InitialsAvatar } from "@/components/cleo/ui";
 import { can, requireStaff } from "@/lib/auth";
-import { studioLogo } from "@/lib/studio-brand";
+import { studioBrand } from "@/lib/studio-brand";
 import { serverSupabase } from "@/lib/supabase/server";
 import { signOutAction } from "../actions";
 
@@ -36,7 +36,7 @@ export default async function PanelLayout({ children, params }: LayoutProps<"/si
     { href: "/admin/marca", label: "Marca", icon: "palette", show: can(ctx, "settings.manage") },
   ];
   const items: NavItem[] = links.filter((l) => l.show).map(({ href, label, icon }) => ({ href, label, icon }));
-  const logo = studioLogo(ctx.studio);
+  const brand = studioBrand(ctx.studio);
 
   const footer = (
     <form action={signOutAction}>
@@ -50,8 +50,8 @@ export default async function PanelLayout({ children, params }: LayoutProps<"/si
     <div className="relative isolate flex flex-1 flex-col lg:flex-row">
       <PanelNav
         items={items}
-        brand={<StudioWordmark name={ctx.studio.name} logoSrc={logo} align="center" sizeClass="text-[2.6rem] max-w-[11.5rem]" />}
-        brandCompact={<StudioMark name={ctx.studio.name} logoSrc={logo} />}
+        brand={<BrandLarge brand={brand} align="center" sizeClass="text-[2.6rem] max-w-[11.5rem]" />}
+        brandCompact={<BrandCompact brand={brand} />}
         footer={footer}
       />
       <div className="relative flex min-w-0 flex-1 flex-col">

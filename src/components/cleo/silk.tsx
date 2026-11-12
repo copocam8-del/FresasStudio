@@ -8,7 +8,6 @@ import { cn } from "cn";
 
 const EDGE = "#f1dfd3"; // brillo del borde
 const LIGHT = "#d9bfae"; // champagne claro
-const MID = "#8f776a";
 
 /** Estrella de cuatro puntas (las de las referencias). */
 export function Sparkle({ className, style }: { className?: string; style?: React.CSSProperties }) {
@@ -157,9 +156,9 @@ export function TileSheen({ variant = 0 }: { variant?: 0 | 1 | 2 | 3 }) {
       {variant !== 0 && <path d="M0 26C10 14 24 4 38 0H0Z" fill={`url(#${id}a)`} />}
       {variant === 0 && (
         <>
-          <path d="M120 132C124 100 150 78 184 70V132Z" fill="#100c0c" opacity=".85" />
-          <path d="M120 132C124 100 150 78 184 70" stroke={EDGE} strokeOpacity=".75" strokeWidth=".9" />
-          <path d="M150 132C156 112 168 100 184 96" stroke={LIGHT} strokeOpacity=".4" strokeWidth=".8" />
+          <path d="M146 132C150 108 164 92 184 86V132Z" fill="#100c0c" opacity=".85" />
+          <path d="M146 132C150 108 164 92 184 86" stroke={EDGE} strokeOpacity=".75" strokeWidth=".9" />
+          <path d="M164 132C168 118 174 110 184 106" stroke={LIGHT} strokeOpacity=".4" strokeWidth=".8" />
         </>
       )}
       {(variant === 1 || variant === 3) && (
@@ -176,7 +175,7 @@ export function TileSheen({ variant = 0 }: { variant?: 0 | 1 | 2 | 3 }) {
 export function BannerSilk() {
   return (
     <svg viewBox="0 0 400 140" preserveAspectRatio="xMaxYMid slice" aria-hidden
-      className="pointer-events-none absolute inset-y-0 right-0 h-full w-[68%]" fill="none">
+      className="pointer-events-none absolute inset-y-0 right-0 h-full w-[42%]" fill="none">
       <defs>
         <linearGradient id="bn-face" x1="250" y1="40" x2="290" y2="120" gradientUnits="userSpaceOnUse">
           <stop stopColor={EDGE} />

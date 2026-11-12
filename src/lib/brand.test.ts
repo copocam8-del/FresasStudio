@@ -4,18 +4,19 @@ import { brandCssVars, checkBrand, detectImageType, parseBrand, primaryForegroun
 // Los mismos casos están en db/tests/07_brand.sql: la base tiene que decidir igual.
 export const BRAND_VECTORS = {
   valid: [
-    { primary: "#6b4f3a", accent: "#b28324", background: "#faf6f0" },
+    { primary: "#d4a5a5", accent: "#c9a48c", background: "#1a1416", enabled: true },
     { primary: "#e91e63" }, // rosa medio: texto negro encima
     { primary: "#888888" }, // gris medio: texto negro (5.9:1)
-    { primary: "#1f3a5f", background: "#fff0f5" },
-    { accent: "#8a5a00" },
+    { primary: "#f8bbd0", background: "#1f1a2e" },
+    { accent: "#b28324" },
+    { enabled: false },
     {},
   ],
   invalid: [
-    { brand: { background: "#333333" }, field: "background" }, // fondo oscuro
+    { brand: { background: "#f5f0e6" }, field: "background" }, // fondo claro (el tema es oscuro)
     { brand: { background: "#e91e63" }, field: "background" }, // fondo intenso
-    { brand: { accent: "#f5f0e6" }, field: "accent" }, // acento casi igual al fondo
-    { brand: { primary: "#fbf7ef" }, field: "primary" }, // botón casi igual al fondo
+    { brand: { accent: "#1a1416" }, field: "accent" }, // acento casi igual al fondo
+    { brand: { primary: "#141012" }, field: "primary" }, // botón casi igual al fondo
   ],
 } as const;
 
@@ -35,7 +36,7 @@ describe("primaryForeground", () => {
   it("con blanco o negro, cualquier color principal llega a 4.5:1 (peor caso ≈ 4.58)", () => {
     for (let v = 0; v <= 255; v++) {
       const hex = "#" + v.toString(16).padStart(2, "0").repeat(3);
-      expect(checkBrand({ primary: hex, background: "#ffffff" }).filter((i) => i.message.includes("texto"))).toEqual([]);
+      expect(checkBrand({ primary: hex }).filter((i) => i.message.includes("texto de los botones"))).toEqual([]);
     }
   });
   it("blanco sobre colores oscuros, negro sobre medios y claros", () => {
@@ -51,20 +52,26 @@ describe("parseBrand / brandCssVars", () => {
       .toEqual({ accent: "#b28324" });
     expect(parseBrand(null)).toEqual({});
   });
-  it("genera las variables CSS de una marca válida", () => {
-    expect(brandCssVars({ primary: "#e91e63", accent: "#8a5a00", background: "#fff0f5" })).toMatchObject({
+  it("genera las variables CSS de una marca propia activada", () => {
+    expect(brandCssVars({ enabled: true, primary: "#e91e63", accent: "#b28324", background: "#1a1416" })).toMatchObject({
       "--primary": "#e91e63",
       "--primary-foreground": "#000000",
-      "--gold": "#8a5a00",
-      "--background": "#fff0f5",
+      "--gold": "#b28324",
+      "--background": "#1a1416",
     });
   });
+  it("sin la marca propia activada, se ve con los colores de Cleo", () => {
+    expect(brandCssVars({ primary: "#e91e63", accent: "#b28324" })).toEqual({});
+    expect(brandCssVars({ enabled: false, primary: "#e91e63" })).toEqual({});
+    expect(parseBrand({ enabled: true }).enabled).toBe(true);
+    expect(parseBrand({ enabled: "si" }).enabled).toBeUndefined();
+  });
   it("si la marca guardada no pasa los controles, usa los colores de Cleo", () => {
-    expect(brandCssVars({ primary: "#fbf7ef" })).toEqual({});
-    expect(brandCssVars({ background: "#000000" })).toEqual({});
+    expect(brandCssVars({ enabled: true, primary: "#141012" })).toEqual({});
+    expect(brandCssVars({ enabled: true, background: "#ffffff" })).toEqual({});
   });
   it("no deja inyectar CSS", () => {
-    expect(brandCssVars({ primary: "#000;}body{display:none" })).toEqual({});
+    expect(brandCssVars({ enabled: true, primary: "#000;}body{display:none" })).toEqual({});
   });
 });
 

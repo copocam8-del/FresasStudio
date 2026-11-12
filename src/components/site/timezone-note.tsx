@@ -13,7 +13,7 @@ export function TimezoneNote({ timezone, label }: { timezone: string; label: str
   );
   if (deviceTz === timezone) return null;
   return (
-    <p role="note" className="rounded-lg border bg-secondary p-3 text-sm text-secondary-foreground">
+    <p role="note" className="rounded-2xl border border-border bg-[#1d1716]/85 p-3.5 text-sm text-foreground">
       Los horarios están en {label}, la del estudio.
     </p>
   );

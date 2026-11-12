@@ -20,10 +20,10 @@ export default async function CategoriesPage({ params }: PageProps<"/sites/[site
       <Link href="/admin/servicios" className="text-sm text-foreground underline underline-offset-4">
         ← Volver a servicios
       </Link>
-      <div className="rounded-xl border bg-card p-5">
+      <div className="glass rounded-[1.1rem] p-5">
         <CategoryForm />
       </div>
-      <ul className="flex flex-col divide-y rounded-xl border bg-card">
+      <ul className="flex flex-col divide-y glass rounded-[1.1rem]">
         {categories.map((c, i) => {
           const count = services.filter((s) => s.category_id === c.id && !s.archived_at).length;
           return (

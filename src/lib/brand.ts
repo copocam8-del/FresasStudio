@@ -9,8 +9,11 @@ import { AA_LARGE_OR_UI, AA_TEXT, contrast, isHexColor, parseHex } from "@/lib/c
  *   accent      detalles decorativos (reemplaza al dorado de Cleo; nunca texto chico)
  *   background  fondo del sitio y del panel
  *   logo_path   archivo en Storage (bucket "brand"), dentro de la carpeta del estudio
+ *   enabled     marca propia activada. Sin esto, el estudio se ve con la marca Cleo
+ *               (logo y colores de Cleo); con esto, su nombre, logo y colores.
  */
 export type Brand = {
+  enabled?: boolean;
   primary?: string;
   accent?: string;
   background?: string;
@@ -19,12 +22,12 @@ export type Brand = {
 
 /** Colores del tema por defecto en hex (de globals.css; ver theme.test.ts). */
 export const THEME = {
-  background: "#faf6ee",
-  foreground: "#34251a",
-  mutedForeground: "#68574a",
-  destructive: "#b63325",
-  primary: "#5f402a",
-  gold: "#b28324",
+  background: "#0e0b0c",
+  foreground: "#f7efe8",
+  mutedForeground: "#cfc2b9",
+  destructive: "#f2948c",
+  primary: "#d7baaa",
+  gold: "#d9c0b1",
 } as const;
 
 /** Texto sobre el color principal: blanco o negro, el que contraste más. */
@@ -44,6 +47,7 @@ export function parseBrand(raw: unknown): Brand {
     if (typeof v === "string" && isHexColor(v)) out[key] = v.toLowerCase();
   }
   if (typeof r.logo_path === "string" && LOGO_PATH_RE.test(r.logo_path)) out.logo_path = r.logo_path;
+  if (typeof r.enabled === "boolean") out.enabled = r.enabled;
   return out;
 }
 
@@ -69,7 +73,7 @@ export function checkBrand(brand: Brand): BrandIssue[] {
     if (worst < AA_TEXT) {
       issues.push({
         field: "background",
-        message: "El fondo es demasiado oscuro o intenso para leer el texto. Elegí un tono más claro.",
+        message: "El fondo es demasiado claro o intenso para leer el texto. Elegí un tono más oscuro.",
       });
     }
   }
@@ -107,7 +111,8 @@ export function checkBrand(brand: Brand): BrandIssue[] {
  */
 export function brandCssVars(raw: unknown): Record<string, string> {
   const brand = parseBrand(raw);
-  if (checkBrand(brand).length > 0) return {};
+  // Sin la marca propia activada, el estudio se ve con los colores de Cleo.
+  if (!brand.enabled || checkBrand(brand).length > 0) return {};
   const vars: Record<string, string> = {};
   if (brand.primary) {
     const fg = primaryForeground(brand.primary);
@@ -145,6 +150,12 @@ export const LOGO_MIME: Record<"png" | "jpg" | "webp", string> = {
 
 /** URL pública del logo (bucket público "brand"). */
 export function logoUrl(supabaseUrl: string, raw: unknown): string | null {
+  // Ojo: es el archivo guardado; si se muestra o no lo decide usesOwnBrand().
   const path = parseBrand(raw).logo_path;
   return path ? `${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/public/brand/${path}` : null;
+}
+
+/** ¿El estudio activó su marca propia? (si no, se ve "Cleo"). */
+export function usesOwnBrand(raw: unknown): boolean {
+  return parseBrand(raw).enabled === true;
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { requirePermission } from "@/lib/auth";
-import { parseBrand } from "@/lib/brand";
-import { studioLogo } from "@/lib/studio-brand";
+import { logoUrl, parseBrand } from "@/lib/brand";
+import { publicEnv } from "@/lib/env";
 import { serverSupabase } from "@/lib/supabase/server";
 import { BrandForm } from "./brand-form";
 
@@ -20,13 +20,13 @@ export default async function BrandPage({ params }: PageProps<"/sites/[site]/adm
   return (
     <>
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold text-foreground">Marca</h1>
+        <h1 className="font-sans text-[2.1rem] leading-tight font-light text-[#f6e6dc]">Marca</h1>
         <p className="text-muted-foreground">
-          Colores y logo de {ctx.studio.name}. Se aplican en tu sitio y en este panel.
+          Cómo se ve {ctx.studio.name}: con la marca Cleo o con la marca propia del estudio.
         </p>
       </div>
-      <div className="rounded-xl border bg-card p-5">
-        <BrandForm initial={brand} logoUrl={studioLogo({ ...ctx.studio, brand: data.brand })} studioName={ctx.studio.name} />
+      <div className="glass rounded-[1.1rem] p-5">
+        <BrandForm initial={brand} logoUrl={logoUrl(publicEnv().NEXT_PUBLIC_SUPABASE_URL, data.brand)} studioName={ctx.studio.name} />
       </div>
     </>
   );

@@ -32,7 +32,7 @@ export function ConfirmForm({
       <div className="flex flex-col gap-2">
         <Label htmlFor="note">Algo que el estudio deba saber (opcional)</Label>
         <textarea id="note" name="note" maxLength={300} rows={2}
-          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-base text-foreground" />
+          className="w-full rounded-xl border border-input/80 bg-[#141010]/80 px-3 py-2 text-base text-foreground" />
       </div>
       <label className="flex min-h-11 items-start gap-3 text-sm text-foreground">
         <input type="checkbox" name="accept_policy" required className="mt-0.5 size-5" />

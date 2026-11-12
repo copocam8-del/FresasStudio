@@ -30,7 +30,7 @@ export function DisconnectButton({ pendingOnline }: { pendingOnline: number }) {
     );
   }
   return (
-    <form action={action} className="flex flex-col gap-3 rounded-lg border border-destructive/40 p-4">
+    <form action={action} className="flex flex-col gap-3 rounded-2xl border border-[#8d4d49] bg-status-cancel/30 p-4">
       <p className="text-sm font-semibold text-foreground">¿Desconectar Mercado Pago?</p>
       <ul className="list-disc pl-5 text-sm text-muted-foreground">
         <li>Se apagan las reservas online en el momento.</li>

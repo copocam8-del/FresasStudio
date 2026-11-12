@@ -26,6 +26,16 @@ export function CleoSvgDefs() {
           <stop stopColor="#b99c8b" stopOpacity=".6" />
           <stop offset="1" stopColor="#f3e0d3" />
         </linearGradient>
+        <linearGradient id="cleo-logo-g" x1="0" y1="40" x2="0" y2="740" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#fbefe6" />
+          <stop offset=".45" stopColor="#e9d3c4" />
+          <stop offset="1" stopColor="#bf9f8d" />
+        </linearGradient>
+        <linearGradient id="cleo-logo-line" x1="360" y1="0" x2="790" y2="0" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#d9bfae" stopOpacity="0" />
+          <stop offset=".5" stopColor="#e9d3c4" />
+          <stop offset="1" stopColor="#d9bfae" stopOpacity="0" />
+        </linearGradient>
       </defs>
     </svg>
   );

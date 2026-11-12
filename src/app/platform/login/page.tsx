@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Ingresar · Cleo Admin", robots: { i
 export default async function PlatformLoginPage() {
   if (await isPlatformAdmin()) redirect("/");
   return (
-    <AuthShell brandName="Cleo Admin" title="Ingresar">
+    <AuthShell brand="platform" title="Ingresar">
       <PlatformLoginForm />
     </AuthShell>
   );

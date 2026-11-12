@@ -12,7 +12,7 @@ import { getBookingContext, myNextBooking } from "@/lib/booking-data";
 import { formatDateTimeLong } from "@/lib/booking-format";
 import { contactItems } from "@/lib/contact";
 import { getPublicCatalog, getStudio } from "@/lib/studio";
-import { studioLogo } from "@/lib/studio-brand";
+import { studioBrand } from "@/lib/studio-brand";
 
 const STATUS: Record<string, string> = { confirmed: "Confirmado", pending_payment: "Pendiente de pago" };
 
@@ -41,7 +41,7 @@ export default async function StudioHome({ params }: PageProps<"/sites/[site]">)
   ].slice(0, 4);
 
   return (
-    <SiteChrome studioName={studio.name} logoSrc={studioLogo(studio)} signedIn={Boolean(user)} bookingEnabled={bookingEnabled}>
+    <SiteChrome brand={studioBrand(studio)} signedIn={Boolean(user)} bookingEnabled={bookingEnabled}>
       <section aria-labelledby="hola" className="relative -mt-1 flex flex-col gap-2">
         <Sparkle className="pointer-events-none absolute -top-5 right-[22%] size-[2.9rem] drop-shadow-[0_0_12px_rgb(240_215_200/0.4)]" />
         <h1 id="hola" className="font-sans text-[2.15rem] leading-tight font-semibold tracking-normal text-foreground">
@@ -64,9 +64,9 @@ export default async function StudioHome({ params }: PageProps<"/sites/[site]">)
           className="glass relative flex min-h-[8.4rem] items-center overflow-hidden rounded-[1.4rem] p-5 pl-6 hover:brightness-110"
         >
           <BannerSilk />
-          <span className="relative flex max-w-[62%] flex-col gap-1.5">
+          <span className="relative flex max-w-[56%] flex-col gap-1.5">
             <span className="text-sm tracking-[0.14em] text-[#e4d3c8] uppercase">Tu próximo turno</span>
-            <span className="text-[1.45rem] leading-tight font-normal text-foreground">{next.service_name}</span>
+            <span className="text-[1.3rem] leading-tight font-normal text-foreground">{next.service_name}</span>
             <span className="text-[0.92rem] text-[#e4d8d0]">
               {formatDateTimeLong(next.starts_at, studio.timezone)} · con {next.professional_name}
             </span>

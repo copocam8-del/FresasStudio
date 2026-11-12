@@ -19,7 +19,7 @@ export default async function BookingSettingsPage({ params }: PageProps<"/sites/
   return (
     <>
       <PageHeader title="Reglas de reservas" description="Cómo y cuándo pueden reservar las clientas." />
-      <div className="rounded-xl border bg-card p-5">
+      <div className="glass rounded-[1.1rem] p-5">
         <BookingSettingsForm s={data as BookingSettings} />
       </div>
     </>

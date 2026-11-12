@@ -1,8 +1,11 @@
 # Sprint de diseño — Plan
 
-> Estado: **borrador para revisión**. En la rama `diseno` están hechas solo la base del tema y
-> 2 pantallas de ejemplo (inicio del estudio en celular e inicio del panel) para mostrar el
-> estilo. El resto se rediseña después del OK.
+> Estado: **implementado** (todas las pantallas). Cambios respecto de este borrador, decididos
+> después: **marca** — por defecto todos los estudios se ven con la marca Cleo (logo completo); solo
+> con la marca propia activada en «Marca» se ven el nombre, el logo y los colores del estudio, con el
+> logo de Cleo chiquito (reemplaza D1/D2). Títulos en sans liviana y el nombre/logo en serif, como en
+> las referencias. Lista de diferencias y rondas de corrección en `docs/diseno/diferencias.md`. El
+> logo de Cleo está redibujado en SVG a partir de las referencias (falta el archivo original).
 
 Referencias: `docs/diseno/ref-*.png` (7 imágenes). **Falta el logo de Cleo** (`logo-cleo`, ideal SVG
 o PNG transparente): mientras no esté, se usa un logotipo de texto provisorio "Cleo" en la serif.

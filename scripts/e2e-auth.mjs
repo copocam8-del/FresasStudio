@@ -66,7 +66,7 @@ ok(r.status === 307 && r.location?.includes("/admin/login?next=%2Fadmin"), `sin 
 
 r = await req(F, "/admin/login");
 ok(r.status === 200 && r.html.includes("<title>Ingresar al panel · Fresas Studio</title>"), "login con el nombre del estudio en el título");
-ok(!/Cleo/.test(r.html), "el login del estudio no menciona Cleo (marca blanca)");
+ok(r.html.includes('aria-label="Cleo"'), "el login del estudio muestra la marca Cleo (Fresas no activó su marca propia)");
 
 r = await login(F, "duena@fresasstudio.test", "incorrecta-123");
 ok(r.html.includes("Email o contraseña incorrectos.") && !Object.keys(r.set).some((k) => k.startsWith("sb-")), "contraseña incorrecta: error genérico y sin sesión");
@@ -82,7 +82,7 @@ ok(r.status === 303 && r.location === "/admin" && Object.keys(sess).length > 0, 
 r = await req(F, "/admin", { cookies: sess });
 ok(r.status === 200 && r.html.includes("Hola,") && r.html.includes("Dueña"), "dueña: ve el panel con su rol");
 ok(r.html.includes("Equipo") && r.html.includes("Marca"), "dueña: ve Equipo y Marca en la navegación");
-ok(!/Cleo/.test(r.html), "el panel del estudio no menciona Cleo (marca blanca)");
+ok(r.html.includes('aria-label="Cleo"'), "el panel del estudio muestra la marca Cleo por defecto");
 
 r = await req(E, "/admin", { cookies: sess });
 ok(r.status === 404, `la sesión de Fresas llevada a mano a Estudio Prueba → 404 (HTTP ${r.status})`);
@@ -120,7 +120,7 @@ r = await req("admin.localhost:3000", "/login", { method: "POST", body: bfd });
 ok(r.html.includes("Email o contraseña incorrectos."), "Cleo Admin: una dueña no puede entrar");
 
 r = await req(F, "/");
-ok(r.status === 200 && r.html.includes("Fresas Studio") && !/Cleo/.test(r.html), "sitio público de Fresas: 200, con su nombre y sin Cleo");
+ok(r.status === 200 && r.html.includes("<title>Fresas Studio</title>") && r.html.includes('aria-label="Cleo"'), "sitio público de Fresas: 200, su nombre en el título y la marca Cleo");
 r = await req("no-existe.localhost:3000", "/");
 ok(r.status === 404, `estudio inexistente → 404 real (HTTP ${r.status})`);
 
@@ -200,7 +200,7 @@ ok(r.status === 404, `después de la baja pierde el acceso al instante (HTTP ${r
 r = await req(F, "/");
 ok(r.html.includes('href="/ingresar"'), "sitio: ofrece Ingresar a quien no tiene sesión");
 r = await req(F, "/ingresar");
-ok(r.status === 200 && r.html.includes("Continuar con Google") && !/Cleo/.test(r.html), "ingresar: botón de Google, sin Cleo");
+ok(r.status === 200 && r.html.includes("Continuar con Google") && r.html.includes('aria-label="Cleo"'), "ingresar: botón de Google, con la marca Cleo");
 const gfd = formFields(r.html, "Continuar con Google");
 r = await req(F, "/ingresar", { method: "POST", body: gfd });
 const authorize = r.location ? new URL(r.location) : null;
@@ -259,20 +259,27 @@ async function saveBrand(fields, logo) {
   return req(F, "/admin/marca", { method: "POST", body: fd, cookies: owner });
 }
 
-r = await saveBrand({ primary: "", accent: "", background: "#333333" });
-ok(r.html.includes("El fondo es demasiado oscuro"), "marca: un fondo oscuro se rechaza en el servidor");
+r = await saveBrand({ enabled: "on", primary: "", accent: "", background: "#f5f0e6" });
+ok(r.html.includes("El fondo es demasiado claro"), "marca: un fondo claro se rechaza en el servidor (el tema es oscuro)");
 const svg = new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>');
 r = await saveBrand({ primary: "", accent: "", background: "" }, { bytes: svg, type: "image/png", name: "logo.png" });
 ok(r.html.includes("PNG, JPG o WebP"), "marca: un SVG disfrazado de .png se rechaza (se miran los bytes)");
 
 const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
-r = await saveBrand({ primary: "#e91e63", accent: "#8a5a00", background: "#fff0f5" }, { bytes: png, type: "image/png", name: "logo.png" });
-ok(r.html.includes("guardamos la marca"), "marca: guarda colores y sube el logo");
+r = await saveBrand({ primary: "#e91e63", accent: "#b28324", background: "#1a1416" }, { bytes: png, type: "image/png", name: "logo.png" });
+ok(r.html.includes("guardamos la marca"), "marca: guarda colores y logo con la marca propia apagada");
+r = await req(F, "/");
+ok(!r.html.includes("--primary:#e91e63") && !r.html.includes("/public/brand/") && r.html.includes('aria-label="Cleo"'),
+   "marca propia apagada: el sitio sigue con la marca Cleo aunque haya colores y logo guardados");
+r = await saveBrand({ enabled: "on", primary: "#e91e63", accent: "#b28324", background: "#1a1416" });
+ok(r.html.includes("guardamos la marca"), "marca: activa la marca propia");
 
 r = await req(F, "/");
 const logoSrc = /<img src="([^"]+\/storage\/v1\/object\/public\/brand\/[^"]+\.png)"/.exec(r.html)?.[1];
-ok(r.html.includes("--primary:#e91e63") && r.html.includes("--primary-foreground:#000000") && r.html.includes("--background:#fff0f5"),
-   "sitio de Fresas: aplica los colores del estudio");
+ok(r.html.includes("--primary:#e91e63") && r.html.includes("--primary-foreground:#000000") && r.html.includes("--background:#1a1416"),
+   "marca propia: el sitio aplica los colores del estudio");
+ok(r.html.includes(">Fresas Studio</span>") && r.html.includes('aria-label="Cleo"'),
+   "marca propia: el nombre del estudio grande, con el logo de Cleo chiquito");
 ok(Boolean(logoSrc) && r.html.includes(`rel="icon" href="${logoSrc}"`), "sitio de Fresas: muestra el logo y lo usa como ícono");
 const logoRes = logoSrc ? await fetch(logoSrc.replace(/&amp;/g, "&")) : null;
 ok(logoRes?.status === 200 && logoRes.headers.get("content-type") === "image/png", "el logo se sirve desde Storage como image/png");
@@ -280,14 +287,14 @@ r = await req(E, "/");
 ok(!r.html.includes("#e91e63") && !r.html.includes("/public/brand/"), "Estudio Prueba no hereda la marca de Fresas");
 
 r = await saveBrand({ primary: "", accent: "", background: "", remove_logo: "on" });
-ok(r.html.includes("guardamos la marca"), "limpieza: vuelve a los colores predeterminados y quita el logo");
+ok(r.html.includes("guardamos la marca"), "limpieza: apaga la marca propia, vuelve a los colores de Cleo y quita el logo");
 // La URL pública puede seguir respondiendo un rato por la caché del CDN de Supabase;
 // lo que importa es que el archivo ya no esté en Storage.
 const left = await sb.storage.from("brand").list("10000000-0000-4000-a000-000000000001");
 ok(!left.error && left.data.filter((o) => o.name.startsWith("logo-")).length === 0,
    "limpieza: el archivo del logo anterior se borró de Storage");
 r = await req(F, "/");
-ok(!r.html.includes("--primary:") && !r.html.includes("/public/brand/"), "sitio de Fresas: sin marca propia otra vez");
+ok(!r.html.includes("--primary:") && !r.html.includes("/public/brand/") && r.html.includes('aria-label="Cleo"'), "sitio de Fresas: con la marca Cleo otra vez");
 
 console.log(fails ? `\n${fails} FALLARON` : "\nTodo ok");
 process.exit(fails ? 1 : 0);

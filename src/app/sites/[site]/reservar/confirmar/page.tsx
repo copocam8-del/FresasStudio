@@ -54,7 +54,7 @@ export default async function BookConfirm({ params, searchParams }: PageProps<"/
 
   return (
     <BookingShell studio={studio} step={4} title="Revisá y confirmá" back={back}>
-      <section aria-label="Resumen" className="flex flex-col gap-3 rounded-xl border bg-card p-5 text-card-foreground">
+      <section aria-label="Resumen" className="flex flex-col gap-3 glass rounded-[1.1rem] p-5 text-card-foreground">
         <div className="flex flex-col">
           <span className="text-lg font-semibold">{svc.name}</span>
           <span>con {preview.professional_name}</span>
@@ -74,7 +74,7 @@ export default async function BookConfirm({ params, searchParams }: PageProps<"/
         </dl>
       </section>
 
-      <section aria-labelledby="politica" className="flex flex-col gap-2 rounded-xl border bg-card p-5 text-card-foreground">
+      <section aria-labelledby="politica" className="flex flex-col gap-2 glass rounded-[1.1rem] p-5 text-card-foreground">
         <h2 id="politica" className="font-semibold">Política del estudio</h2>
         <ul className="list-disc pl-5 text-sm">
           <li>Tu horario queda guardado {hold} para pagar la seña. Si no se paga, se libera solo.</li>

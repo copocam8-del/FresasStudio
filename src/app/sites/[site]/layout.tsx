@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { brandCssVars } from "@/lib/brand";
 import { getStudio } from "@/lib/studio";
-import { studioLogo } from "@/lib/studio-brand";
+import { BrandLarge, CleoLogo } from "@/components/cleo/brand";
+import { WelcomeSplash } from "@/components/cleo/welcome";
+import { studioBrand, studioLogo } from "@/lib/studio-brand";
 
-// Sitio y panel de un estudio (marca blanca): todo lo que cuelga de acá muestra
-// solo el nombre y la marca del estudio, nunca "Cleo".
+// Sitio y panel de un estudio. Marca: por defecto, Cleo; si el estudio activó su marca
+// propia (/admin/marca), su nombre, logo y colores con el logo de Cleo chiquito.
 
 export async function generateMetadata({ params }: LayoutProps<"/sites/[site]">): Promise<Metadata> {
   const { site } = await params;
@@ -25,8 +27,12 @@ export default async function SiteLayout({ children, params }: LayoutProps<"/sit
 
   // Colores del estudio sobre el tema de Cleo (solo hex validados; nada si no pasan contraste).
   const style = brandCssVars(studio.brand) as React.CSSProperties;
+  const brand = studioBrand(studio);
   return (
     <div style={style} className="flex flex-1 flex-col bg-background text-foreground">
+      <WelcomeSplash>
+        {brand.ownBrand ? <BrandLarge brand={brand} align="center" sizeClass="text-[3.4rem]" /> : <CleoLogo className="h-[9rem]" />}
+      </WelcomeSplash>
       {children}
     </div>
   );
