@@ -1,9 +1,10 @@
 # Cleo — plataforma SaaS para estudios de belleza
 
-**Cleo** es una plataforma multi-tenant y de **marca blanca**: cada estudio tiene su sitio
-(`{slug}.cleo.com.ar`) y su panel (Cleo Manager, en `{slug}.cleo.com.ar/admin`), y la
-plataforma se administra desde Cleo Admin (`admin.cleo.com.ar`). En el sitio y el panel de
-un estudio se ve solo su nombre, sus colores y su logo; nunca "Cleo".
+**Cleo** es una plataforma multi-tenant: cada estudio tiene su sitio (`{slug}.cleo.com.ar`) y su
+panel (Cleo Manager, en `{slug}.cleo.com.ar/admin`), y la plataforma se administra desde Cleo
+Admin (`admin.cleo.com.ar`). Por defecto, el sitio y el panel de cada estudio se ven con la marca
+Cleo; si el estudio activa su **marca propia** (en «Marca»), se ven su nombre, su logo y sus
+colores, con el logo de Cleo chiquito.
 **Fresas Studio** (`fresas`) es el primer estudio cliente.
 
 - Sprint 1: base de datos multi-tenant (estudios, roles, permisos, invitaciones, auditoría).
@@ -18,6 +19,10 @@ un estudio se ve solo su nombre, sus colores y su logo; nunca "Cleo".
   OAuth (tokens cifrados, renovación automática), la seña se cobra con Checkout Pro en la cuenta
   del estudio y la reserva se confirma solo con el pago verificado contra la API (webhook
   idempotente + revisión cada 10 min). Pago tardío, devoluciones automáticas y conciliación.
+- Sprint de diseño ([plan](docs/diseno-plan.md), [diferencias](docs/diseno/diferencias.md)): tema
+  oscuro de Cleo calcado de las referencias (`docs/diseno/`), logo de Cleo en SVG, marca Cleo por
+  defecto y marca propia opcional, bienvenida animada y todas las pantallas rediseñadas.
+  Capturas: `docs/diseno/capturas/`.
 
 Hosting: **Render** (Web Service). Ver "Infraestructura" en `CLAUDE.md`.
 
@@ -39,6 +44,7 @@ src/
                                marca (colores y logo), Mercado Pago (conectar, pagos recibidos)
     api/pagos/                 Mercado Pago, en cualquier host: vuelta de OAuth, webhook, tareas internas
   lib/                         host, auth (DAL), validación, color/contraste, marca, Supabase
+  components/cleo/             tema de Cleo: logo, seda, vidrio, tarjetas, pastillas, menú, barra inferior
   lib/payments/                cifrado, firma de webhooks, cliente de Mercado Pago, cuentas y flujos (server-only)
 supabase/
   migrations/
@@ -67,6 +73,7 @@ supabase/
     20261110002300_payment_accounts.sql   cuentas de Mercado Pago por estudio, tokens cifrados, OAuth (state)
     20261110002400_payments.sql        links de pago, pagos, eventos, avisos, devoluciones, pago tardío
     20261110002500_payments_cron.sql   revisión de pagos cada 10 min y tareas diarias (pg_cron + pg_net)
+    20261110002600_brand_dark_theme.sql  marca propia opcional (brand.enabled) y validación para tema oscuro
   seed.sql                             SOLO desarrollo: Fresas Studio + Estudio Prueba (idempotente)
 db/
   local/00_supabase_shim.sql           SOLO local: imita auth, roles y Storage de Supabase
@@ -82,6 +89,7 @@ scripts/
   e2e-auth.mjs, e2e-catalog.mjs,       pruebas de punta a punta contra la app y Supabase de desarrollo
   e2e-booking.mjs                      (incluye 10 envíos simultáneos al mismo horario)
   e2e-payments.mjs, fake-mercadopago.mjs  Mercado Pago de punta a punta con un Mercado Pago simulado
+  screenshots.mjs                      capturas de las pantallas (Chrome/Edge sin ventana)
   e2e-lib.mjs                          helpers compartidos de los e2e
 ```
 

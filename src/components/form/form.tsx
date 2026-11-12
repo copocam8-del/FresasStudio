@@ -49,14 +49,14 @@ export function FormMessage({ state }: { state: FormState }) {
   if (!state) return null;
   if (state.error) {
     return (
-      <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+      <p role="alert" className="rounded-2xl border border-[#8d4d49] bg-status-cancel/70 p-3.5 text-status-cancel-foreground text-sm text-destructive">
         {state.error}
       </p>
     );
   }
   if (state.ok) {
     return (
-      <p role="status" className="rounded-lg border bg-secondary p-3 text-sm text-secondary-foreground">
+      <p role="status" className="rounded-2xl border border-border bg-[#1d1716]/85 p-3.5 text-sm text-foreground">
         {state.ok}
       </p>
     );

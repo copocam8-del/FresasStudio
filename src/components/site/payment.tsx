@@ -23,7 +23,7 @@ export function PayDepositButton({
         {pending ? "Abriendo Mercado Pago…" : label}
       </Button>
       {state?.error && (
-        <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+        <p role="alert" className="rounded-2xl border border-[#8d4d49] bg-status-cancel/70 p-3.5 text-status-cancel-foreground text-sm text-destructive">
           {state.error}
         </p>
       )}

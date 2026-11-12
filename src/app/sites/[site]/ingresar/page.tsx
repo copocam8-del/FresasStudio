@@ -4,7 +4,7 @@ import { AuthShell } from "@/components/auth/auth-shell";
 import { Button } from "@/components/ui/button";
 import { getUser } from "@/lib/auth";
 import { getStudio } from "@/lib/studio";
-import { studioLogo } from "@/lib/studio-brand";
+import { studioBrand } from "@/lib/studio-brand";
 import { safeNext } from "@/lib/validation";
 import { googleSignInAction } from "../client-actions";
 
@@ -21,12 +21,12 @@ export default async function ClientSignInPage({ params, searchParams }: PagePro
 
   return (
     <AuthShell
-      brandName={studio.name} logoUrl={studioLogo(studio)}
+      brand={studioBrand(studio)}
       title="Ingresar"
       description="Entrá con tu cuenta de Google para ver tus datos y, pronto, tus turnos."
     >
       {sp.error === "google" && (
-        <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+        <p role="alert" className="rounded-2xl border border-[#8d4d49] bg-status-cancel/70 p-3.5 text-status-cancel-foreground text-sm text-destructive">
           No pudimos completar el ingreso con Google. Probá de nuevo.
         </p>
       )}

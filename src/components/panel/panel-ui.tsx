@@ -16,11 +16,11 @@ export function PageHeader({
   return (
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
-        {description && <p className="text-muted-foreground">{description}</p>}
+        <h1 className="font-sans text-[2.1rem] leading-tight font-light text-[#f6e6dc] sm:text-[2.3rem]">{title}</h1>
+        {description && <p className="text-[1.02rem] text-foreground/90">{description}</p>}
       </div>
       {action && (
-        <Link href={action.href} className={buttonVariants({ className: "h-11 px-4" })}>
+        <Link href={action.href} className={buttonVariants({ className: "px-5" })}>
           {action.label}
         </Link>
       )}
@@ -33,8 +33,8 @@ export function Badge({ children, tone = "muted" }: { children: React.ReactNode;
     <span
       className={
         tone === "warn"
-          ? "rounded-full border border-destructive/40 px-2 py-0.5 text-xs font-medium text-destructive"
-          : "rounded-full border px-2 py-0.5 text-xs font-medium text-muted-foreground"
+          ? "rounded-full border border-[#d4b59d] bg-status-pending px-2.5 py-0.5 text-xs font-medium text-status-pending-foreground"
+          : "rounded-full border border-[#4a3f3c] bg-status-neutral px-2.5 py-0.5 text-xs font-medium text-status-neutral-foreground"
       }
     >
       {children}
@@ -79,5 +79,5 @@ export function MoveButtons({
 }
 
 export function EmptyState({ children }: { children: React.ReactNode }) {
-  return <p className="rounded-xl border border-dashed bg-card p-6 text-center text-muted-foreground">{children}</p>;
+  return <p className="rounded-[1.1rem] border border-dashed border-border bg-[#141010]/70 p-6 text-center text-foreground/80">{children}</p>;
 }

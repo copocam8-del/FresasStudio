@@ -25,7 +25,7 @@ export default async function ProfessionalsPage({ params }: PageProps<"/sites/[s
         action={canEdit ? { href: "/admin/profesionales/nueva", label: "+ Nueva profesional" } : undefined}
       />
       {live.length === 0 && <EmptyState>Todavía no hay profesionales.</EmptyState>}
-      <ul className="flex flex-col divide-y rounded-xl border bg-card">
+      <ul className="flex flex-col divide-y glass rounded-[1.1rem]">
         {live.map((p) => {
           const photo = catalogPhotoUrl(p.photo_path);
           const count = assignments.filter((a) => a.professional_id === p.id).length;
@@ -58,7 +58,7 @@ export default async function ProfessionalsPage({ params }: PageProps<"/sites/[s
         })}
       </ul>
       {canEdit && archived.length > 0 && (
-        <details className="rounded-xl border bg-card p-4">
+        <details className="glass rounded-[1.1rem] p-4">
           <summary className="cursor-pointer font-medium">Archivadas ({archived.length})</summary>
           <ul className="mt-3 flex flex-col gap-2">
             {archived.map((p) => (

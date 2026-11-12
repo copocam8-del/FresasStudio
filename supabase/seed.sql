@@ -147,6 +147,11 @@ update public.tenant_settings
  where tenant_id = '10000000-0000-4000-a000-000000000001'
    and not (payments_connected and online_booking_enabled);
 
+-- Fresas, SIN marca propia: se ve con la marca Cleo (regla de marca, CLAUDE.md 1b).
+update public.tenant_settings
+   set brand = brand - 'enabled'
+ where tenant_id = '10000000-0000-4000-a000-000000000001' and brand ? 'enabled';
+
 -- =====================================================================
 -- SOLO DESARROLLO: simular que Mercado Pago avisó un pago APROBADO de la seña.
 -- Vive únicamente en este seed, que nunca se aplica en producción: en producción

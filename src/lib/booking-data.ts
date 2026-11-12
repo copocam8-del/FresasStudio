@@ -114,3 +114,12 @@ export function splitBookings(bookings: MyBooking[], now = Date.now()) {
   const past = bookings.filter((b) => new Date(b.starts_at).getTime() < now);
   return { upcoming, past };
 }
+
+/** Próximo turno activo de la clienta (confirmado, o esperando pago sin vencer), o null. */
+export async function myNextBooking(slug: string): Promise<MyBooking | null> {
+  const now = Date.now();
+  return (await myBookings(slug))
+    .filter((b) => new Date(b.starts_at).getTime() > now
+      && (b.status === "confirmed" || (b.status === "pending_payment" && !!b.hold_expires_at && new Date(b.hold_expires_at).getTime() > now)))
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at))[0] ?? null;
+}

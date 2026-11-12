@@ -26,7 +26,7 @@ export function InviteForm({ roles, studioName }: { roles: Role[]; studioName: s
           readOnly
           value={state.link}
           onFocus={(e) => e.currentTarget.select()}
-          className="h-11 w-full rounded-lg border border-input bg-background px-3 font-mono text-sm text-foreground"
+          className="h-11 w-full rounded-xl border border-input/80 bg-[#141010]/80 px-3 font-mono text-sm text-foreground"
         />
         <div className="flex flex-col gap-2 sm:flex-row">
           <Button
@@ -65,7 +65,7 @@ export function InviteForm({ roles, studioName }: { roles: Role[]; studioName: s
           name="role_id"
           required
           defaultValue=""
-          className="h-11 w-full rounded-lg border border-input bg-background px-3 text-base text-foreground"
+          className="h-11 w-full rounded-xl border border-input/80 bg-[#141010]/80 px-3 text-base text-foreground"
         >
           <option value="" disabled>
             Elegí un rol
@@ -78,7 +78,7 @@ export function InviteForm({ roles, studioName }: { roles: Role[]; studioName: s
         </select>
       </div>
       {state?.error && (
-        <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+        <p role="alert" className="rounded-2xl border border-[#8d4d49] bg-status-cancel/70 p-3.5 text-status-cancel-foreground text-sm text-destructive">
           {state.error}
         </p>
       )}

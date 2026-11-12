@@ -94,9 +94,9 @@ export default async function ProfessionalPage({ params, searchParams }: PagePro
           </Link>
         ))}
       </nav>
-      <div className="rounded-xl border bg-card p-5">{content}</div>
+      <div className="glass rounded-[1.1rem] p-5">{content}</div>
       {tab === "datos" && canManage && !pro.archived_at && (
-        <form action={setProfessionalFlagAction} className="flex flex-col gap-2 rounded-xl border border-destructive/30 bg-card p-5">
+        <form action={setProfessionalFlagAction} className="flex flex-col gap-2 glass rounded-[1.1rem] !border-[#8d4d49]/70 p-5">
           <input type="hidden" name="id" value={pro.id} />
           <input type="hidden" name="action" value="archive" />
           <p className="text-sm text-muted-foreground">

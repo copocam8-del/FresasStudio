@@ -17,7 +17,7 @@ export type BookingSettings = {
   cancellation_window_hours: number;
 };
 
-const select = "h-11 w-full rounded-lg border border-input bg-background px-3 text-base text-foreground";
+const select = "h-11 w-full rounded-xl border border-input/80 bg-[#141010]/80 px-3 text-base text-foreground";
 const NOTICE = [0, 60, 120, 360, 720, 1440, 2880, 4320];
 const HOLD = [15, 30, 60, 120, 240, 720, 1440];
 const label = (m: number) => (m === 0 ? "Sin mínimo" : m < 60 ? `${m} minutos` : m % 1440 === 0 ? `${m / 1440} ${m === 1440 ? "día" : "días"}` : `${m / 60} ${m === 60 ? "hora" : "horas"}`);

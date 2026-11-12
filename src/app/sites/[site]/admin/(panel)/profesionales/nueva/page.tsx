@@ -15,7 +15,7 @@ export default async function NewProfessionalPage({ params }: PageProps<"/sites/
   return (
     <>
       <PageHeader title="Nueva profesional" description="Después de crearla elegís qué servicios hace y su horario." />
-      <div className="rounded-xl border bg-card p-5">
+      <div className="glass rounded-[1.1rem] p-5">
         <ProfessionalForm
           initial={{ display_name: "", bio: null, membership_id: null, show_online: true, accepts_online_booking: true, is_active: true }}
           members={members}

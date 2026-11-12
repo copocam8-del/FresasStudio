@@ -27,7 +27,7 @@ const stamp = Date.now().toString(36);
 let r = await req(F, "/admin/servicios", { cookies: owner });
 ok(r.status === 200 && r.html.includes("Esmaltado semipermanente") && r.html.includes("Lo hacen: Sofi, Caro"),
    "servicios: la dueña ve el catálogo con quién hace cada servicio");
-ok(!/Cleo/.test(r.html), "servicios: sin la marca Cleo");
+ok(r.html.includes('aria-label="Cleo"'), "servicios: con la marca Cleo (Fresas no activó la propia)");
 
 r = await req(F, "/admin/servicios", { cookies: pro });
 ok(r.status === 200 && r.html.includes("Solo lectura") && !r.html.includes("+ Nuevo servicio"), "servicios: la profesional ve en solo lectura");
@@ -186,11 +186,11 @@ ok(/desde \$\s13\.000/.test(site) && /\$\s9\.000/.test(site) && site.includes("1
 ok(site.includes("Con Sofi o Caro") && site.includes(">Profesionales<") && site.includes("Especialista en uñas."),
    "sitio: muestra las profesionales y quién hace cada servicio");
 ok(!site.includes("Diseño con henna"), "sitio: el servicio «no visible en el sitio» no aparece");
-ok(!/Cleo/.test(site), "sitio: sin «Cleo» (marca blanca)");
+ok(site.includes('aria-label="Cleo"'), "sitio: con la marca Cleo por defecto");
 ok(site.includes('href="/reservar"') && site.includes("Reservar turno"),
    "sitio: con las reservas online prendidas (seed de desarrollo) ofrece «Reservar turno»");
 r = await req("estudio-prueba.localhost:3000", "/");
-ok(r.status === 200 && !r.html.includes(">Servicios<") && !r.html.includes("Esmaltado"), "Estudio Prueba: no muestra nada del catálogo de Fresas");
+ok(r.status === 200 && !r.html.includes('id="servicios"') && !r.html.includes(">Servicios<") && !r.html.includes("Esmaltado"), "Estudio Prueba: no muestra nada del catálogo de Fresas (ni la sección Servicios)");
 
 // ---------------------------------------------------------------------
 // Fotos (bucket "catalog", Storage real)

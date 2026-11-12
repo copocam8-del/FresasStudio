@@ -34,7 +34,7 @@ export function BlockList({
   };
 
   return (
-    <ul className="flex flex-col divide-y rounded-xl border bg-card">
+    <ul className="flex flex-col divide-y glass rounded-[1.1rem]">
       {blocks.map((b) => (
         <li key={b.id} className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-col">

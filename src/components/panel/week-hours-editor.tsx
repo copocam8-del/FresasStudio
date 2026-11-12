@@ -95,7 +95,7 @@ export function WeekHoursEditor({
                     step={300}
                     value={r.start}
                     onChange={(e) => update(d.iso, rows.map((x, j) => (j === i ? { ...x, start: e.target.value } : x)))}
-                    className="h-11 flex-1 rounded-lg border border-input bg-background px-2 text-base"
+                    className="h-11 flex-1 rounded-xl border border-input/80 bg-[#141010]/80 px-2 text-base"
                   />
                   <span aria-hidden>a</span>
                   <label className="sr-only" htmlFor={`d${d.iso}-${i}-e`}>{`${d.name}, franja ${i + 1}, hasta`}</label>
@@ -105,7 +105,7 @@ export function WeekHoursEditor({
                     step={300}
                     value={r.end === "24:00" ? "23:59" : r.end}
                     onChange={(e) => update(d.iso, rows.map((x, j) => (j === i ? { ...x, end: e.target.value === "23:59" ? "24:00" : e.target.value } : x)))}
-                    className="h-11 flex-1 rounded-lg border border-input bg-background px-2 text-base"
+                    className="h-11 flex-1 rounded-xl border border-input/80 bg-[#141010]/80 px-2 text-base"
                   />
                   <Button
                     type="button"
@@ -153,7 +153,7 @@ export function WeekHoursEditor({
       {canEdit && (
         <>
           {problems.length > 0 && (
-            <ul role="alert" className="list-disc rounded-lg border border-destructive/40 bg-destructive/5 p-3 pl-6 text-sm text-destructive">
+            <ul role="alert" className="list-disc rounded-2xl border border-[#8d4d49] bg-status-cancel/70 p-3.5 text-status-cancel-foreground pl-6 text-sm text-destructive">
               {problems.map((p) => (
                 <li key={p}>{p}</li>
               ))}

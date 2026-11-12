@@ -22,8 +22,8 @@ for (let i = 1; i <= 10; i++) {
 // Flujo de la clienta
 // ---------------------------------------------------------------------
 let r = await req(F, "/reservar");
-ok(r.status === 200 && r.html.includes("¿Qué te querés hacer?") && r.html.includes("Esmaltado semipermanente") && !/Cleo/.test(r.html),
-   "paso 1: lista de servicios, sin Cleo");
+ok(r.status === 200 && r.html.includes("¿Qué te querés hacer?") && r.html.includes("Esmaltado semipermanente") && r.html.includes('aria-label="Cleo"'),
+   "paso 1: lista de servicios, con la marca Cleo");
 r = await req(F, `/reservar/${SEMI}`);
 ok(r.status === 200 && r.html.includes("Cualquiera disponible") && r.html.includes("Sofi") && r.html.includes("Caro"),
    "paso 2: «Cualquiera disponible» primero y cada profesional");

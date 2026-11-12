@@ -28,7 +28,7 @@ export default async function EditServicePage({ params }: PageProps<"/sites/[sit
         title={service.name}
         description={who.length ? `Lo hacen: ${who.join(", ")}. Se asigna desde cada profesional.` : "Ninguna profesional lo tiene asignado: se asigna desde Profesionales."}
       />
-      <div className="rounded-xl border bg-card p-5">
+      <div className="glass rounded-[1.1rem] p-5">
         <ServiceForm
           initial={service}
           categories={categories.filter((c) => c.is_active || c.id === service.category_id)}
@@ -38,7 +38,7 @@ export default async function EditServicePage({ params }: PageProps<"/sites/[sit
         />
       </div>
       {!service.archived_at && (
-        <form action={setServiceFlagAction} className="flex flex-col gap-2 rounded-xl border border-destructive/30 bg-card p-5">
+        <form action={setServiceFlagAction} className="flex flex-col gap-2 glass rounded-[1.1rem] !border-[#8d4d49]/70 p-5">
           <input type="hidden" name="id" value={service.id} />
           <input type="hidden" name="action" value="archive" />
           <p className="text-sm text-muted-foreground">

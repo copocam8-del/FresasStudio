@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { BrandLarge, CleoLogo } from "@/components/cleo/brand";
 import { FormMessage, SubmitButton } from "@/components/form/form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -12,7 +13,7 @@ type ColorKey = "primary" | "accent" | "background";
 const FIELDS: { key: ColorKey; label: string; hint: string; fallback: string }[] = [
   { key: "primary", label: "Color principal", hint: "Botones y elementos destacados.", fallback: THEME.primary },
   { key: "accent", label: "Color de acento", hint: "Detalles decorativos (líneas, íconos). No se usa para textos.", fallback: THEME.gold },
-  { key: "background", label: "Fondo", hint: "Fondo del sitio y del panel. Tiene que ser claro.", fallback: THEME.background },
+  { key: "background", label: "Fondo", hint: "Fondo del sitio y del panel. Tiene que ser oscuro (el texto es claro).", fallback: THEME.background },
 ];
 
 export function BrandForm({
@@ -31,14 +32,28 @@ export function BrandForm({
     background: initial.background ?? null,
   });
 
-  const draft: Brand = Object.fromEntries(Object.entries(colors).filter(([, v]) => v)) as Brand;
+  const [enabled, setEnabled] = useState(initial.enabled === true);
+  const draft: Brand = { ...(Object.fromEntries(Object.entries(colors).filter(([, v]) => v)) as Brand), enabled: true };
   const issues = checkBrand(draft);
   const preview = brandCssVars(draft) as React.CSSProperties;
 
   return (
     <form action={action} className="flex flex-col gap-6">
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-2 text-[1.05rem] font-normal text-card-foreground">Marca que se ve</legend>
+        <label className="flex min-h-11 items-start gap-3 text-sm text-foreground">
+          <input type="checkbox" name="enabled" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="mt-0.5 size-5 accent-[#d7baaa]" />
+          <span>
+            Usar la marca propia de {studioName}
+            <span className="block text-foreground/80">
+              Apagado: el sitio y el panel se ven con la marca Cleo. Prendido: se ven el nombre, el logo y los colores de
+              tu estudio, con el logo de Cleo chiquito.
+            </span>
+          </span>
+        </label>
+      </fieldset>
       <fieldset className="flex flex-col gap-5">
-        <legend className="mb-2 text-lg font-semibold text-card-foreground">Colores</legend>
+        <legend className="mb-2 text-[1.05rem] font-normal text-card-foreground">Colores</legend>
         {FIELDS.map((f) => {
           const value = colors[f.key];
           const issue = issues.find((i) => i.field === f.key);
@@ -53,7 +68,7 @@ export function BrandForm({
                   onChange={(e) => setColors((c) => ({ ...c, [f.key]: e.target.value }))}
                   aria-describedby={`${f.key}-hint`}
                   aria-invalid={issue ? true : undefined}
-                  className="h-11 w-16 cursor-pointer rounded-lg border border-input bg-background p-1"
+                  className="h-11 w-16 cursor-pointer rounded-xl border border-input/80 bg-[#141010]/80 p-1"
                 />
                 <span className="font-mono text-sm text-card-foreground">{value ?? "predeterminado"}</span>
                 {value && (
@@ -82,18 +97,21 @@ export function BrandForm({
         })}
       </fieldset>
 
-      <section aria-label="Vista previa" style={preview} className="flex flex-col gap-3 rounded-xl border bg-background p-5 text-foreground">
+      <section aria-label="Vista previa" style={enabled ? preview : undefined} className="flex flex-col gap-3 rounded-[1.1rem] border border-border bg-background p-5 text-foreground">
         <span className="text-sm text-muted-foreground">Vista previa</span>
-        <div className="h-px w-12 bg-gold" aria-hidden />
-        <p className="text-xl font-semibold">{studioName}</p>
+        {enabled ? (
+          <BrandLarge brand={{ name: studioName, ownBrand: true, logoSrc: logoUrl }} />
+        ) : (
+          <CleoLogo className="h-16 self-start" />
+        )}
         <p className="text-muted-foreground">Así se ven los textos sobre tu fondo.</p>
-        <span className="inline-flex h-11 w-fit items-center rounded-lg bg-primary px-4 font-medium text-primary-foreground">
+        <span className="champagne inline-flex h-11 w-fit items-center rounded-full px-5 font-medium">
           Reservar turno
         </span>
       </section>
 
       <fieldset className="flex flex-col gap-3">
-        <legend className="mb-2 text-lg font-semibold text-card-foreground">Logo</legend>
+        <legend className="mb-2 text-[1.05rem] font-normal text-card-foreground">Logo</legend>
         {logoUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logoUrl} alt={`Logo actual de ${studioName}`} className="h-16 w-auto max-w-[220px] object-contain" />

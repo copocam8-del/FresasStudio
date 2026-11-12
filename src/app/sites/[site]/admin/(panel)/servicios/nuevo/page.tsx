@@ -13,7 +13,7 @@ export default async function NewServicePage({ params }: PageProps<"/sites/[site
   return (
     <>
       <PageHeader title="Nuevo servicio" />
-      <div className="rounded-xl border bg-card p-5">
+      <div className="glass rounded-[1.1rem] p-5">
         <ServiceForm
           initial={{
             name: "",

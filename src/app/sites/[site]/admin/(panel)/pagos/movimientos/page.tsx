@@ -14,7 +14,7 @@ import { retryRefundAction } from "../actions";
 
 export const metadata: Metadata = { title: "Pagos recibidos" };
 
-const input = "h-11 w-full rounded-lg border border-input bg-background px-3 text-base text-foreground";
+const input = "h-11 w-full rounded-xl border border-input/80 bg-[#141010]/80 px-3 text-base text-foreground";
 
 export default async function PaymentsListPage({ params, searchParams }: PageProps<"/sites/[site]/admin/pagos/movimientos">) {
   const { site } = await params;
@@ -33,7 +33,7 @@ export default async function PaymentsListPage({ params, searchParams }: PagePro
     <>
       <PageHeader title="Pagos recibidos" description="Señas cobradas con Mercado Pago, para cruzar con el resumen de tu cuenta." />
 
-      <form className="grid grid-cols-2 items-end gap-3 rounded-xl border bg-card p-4 sm:grid-cols-[1fr_1fr_auto]">
+      <form className="grid grid-cols-2 items-end gap-3 glass rounded-[1.1rem] p-4 sm:grid-cols-[1fr_1fr_auto]">
         <div className="flex flex-col gap-1">
           <Label htmlFor="desde">Desde</Label>
           <input id="desde" name="desde" type="date" defaultValue={period.desde} className={input} />
@@ -56,7 +56,7 @@ export default async function PaymentsListPage({ params, searchParams }: PagePro
       </p>
 
       {attention.length > 0 && (
-        <section aria-labelledby="resolver" className="flex flex-col gap-3 rounded-xl border-2 border-destructive/40 bg-card p-4">
+        <section aria-labelledby="resolver" className="flex flex-col gap-3 glass rounded-[1.1rem] !border-[#8d4d49] p-4">
           <h2 id="resolver" className="font-semibold text-destructive">Pagos a resolver ({attention.length})</h2>
           <ul className="flex flex-col divide-y">
             {attention.map((p) => (
@@ -83,9 +83,9 @@ export default async function PaymentsListPage({ params, searchParams }: PagePro
           )}
         </div>
         {rows.length === 0 ? (
-          <p className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">No hay pagos en este período.</p>
+          <p className="glass rounded-[1.1rem] p-4 text-sm text-muted-foreground">No hay pagos en este período.</p>
         ) : (
-          <ul className="flex flex-col divide-y rounded-xl border bg-card">
+          <ul className="flex flex-col divide-y glass rounded-[1.1rem]">
             {rows.map((p) => (
               <li key={p.payment_id} className="flex flex-col gap-1 p-3 text-sm">
                 <PaymentSummary p={p} tz={tz} />
@@ -100,7 +100,7 @@ export default async function PaymentsListPage({ params, searchParams }: PagePro
 
 function Total({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
-    <div className="flex flex-col gap-1 rounded-xl border bg-card p-3">
+    <div className="flex flex-col gap-1 glass rounded-[1.1rem] p-3">
       <span className="text-xs text-muted-foreground">{label}</span>
       <span className={strong ? "text-lg font-semibold text-card-foreground" : "font-medium text-card-foreground"}>{value}</span>
     </div>

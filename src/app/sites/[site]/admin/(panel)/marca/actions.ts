@@ -17,7 +17,8 @@ export async function saveBrandAction(_prev: BrandState, formData: FormData): Pr
   const ctx = await currentStaff();
   if (!ctx || !can(ctx, "settings.manage")) return { error: "No tenés permiso para cambiar la marca." };
 
-  const brand: Brand = {};
+  // Marca propia: sin esto el estudio se ve con la marca Cleo (se guarda igual lo cargado).
+  const brand: Brand = { enabled: formData.get("enabled") === "on" };
   for (const key of ["primary", "accent", "background"] as const) {
     const raw = String(formData.get(key) ?? "").trim();
     if (!raw) continue; // vacío = usar el color por defecto

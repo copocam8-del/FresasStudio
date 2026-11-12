@@ -35,12 +35,12 @@ export function ProfessionalForm({
       <div className="flex flex-col gap-2">
         <Label htmlFor="bio">Descripción corta</Label>
         <textarea id="bio" name="bio" defaultValue={initial.bio ?? ""} maxLength={500} rows={3}
-          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-base text-foreground" />
+          className="w-full rounded-xl border border-input/80 bg-[#141010]/80 px-3 py-2 text-base text-foreground" />
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="membership_id">¿Usa el panel?</Label>
         <select id="membership_id" name="membership_id" defaultValue={initial.membership_id ?? ""} aria-describedby="membership-hint"
-          className="h-11 w-full rounded-lg border border-input bg-background px-3 text-base text-foreground">
+          className="h-11 w-full rounded-xl border border-input/80 bg-[#141010]/80 px-3 text-base text-foreground">
           <option value="">No, no tiene cuenta</option>
           {members.map((m) => (
             <option key={m.id} value={m.id}>
@@ -101,7 +101,7 @@ export function ProfessionalServicesForm({
           {services.filter((s) => s.category === g).map((s) => {
             const a = assignments.find((x) => x.service_id === s.id);
             return (
-              <div key={s.id} className="flex flex-col gap-2 rounded-lg border p-3">
+              <div key={s.id} className="flex flex-col gap-2 rounded-2xl border border-border bg-[#181413]/85 p-3">
                 <label className="flex min-h-11 items-center gap-3">
                   <input type="checkbox" name={`svc_${s.id}`} checked={checked[s.id]} className="size-5"
                     onChange={(e) => setChecked((c) => ({ ...c, [s.id]: e.target.checked }))} />

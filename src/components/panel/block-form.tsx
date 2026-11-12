@@ -27,7 +27,7 @@ export function BlockForm({
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="kind">Tipo</Label>
-        <select id="kind" name="kind" defaultValue={professionalId ? "day_off" : "holiday"} className="h-11 rounded-lg border border-input bg-background px-3 text-base">
+        <select id="kind" name="kind" defaultValue={professionalId ? "day_off" : "holiday"} className="h-11 rounded-xl border border-input/80 bg-[#141010]/80 px-3 text-base">
           {BLOCK_KINDS.map((k) => (
             <option key={k.value} value={k.value}>
               {k.label}
@@ -39,7 +39,7 @@ export function BlockForm({
       {!professionalId && professionals && (
         <div className="flex flex-col gap-2">
           <Label htmlFor="professional_id">¿A quién afecta?</Label>
-          <select id="professional_id" name="professional_id" defaultValue="" className="h-11 rounded-lg border border-input bg-background px-3 text-base">
+          <select id="professional_id" name="professional_id" defaultValue="" className="h-11 rounded-xl border border-input/80 bg-[#141010]/80 px-3 text-base">
             <option value="">Todo el estudio</option>
             {professionals.map((p) => (
               <option key={p.id} value={p.id}>

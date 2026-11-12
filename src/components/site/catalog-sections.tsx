@@ -21,13 +21,13 @@ export function CatalogSections({ catalog, bookingEnabled }: { catalog: PublicCa
     <>
       {groups.length > 0 && (
         <section aria-labelledby="servicios" className="flex flex-col gap-6">
-          <h2 id="servicios" className="text-2xl font-semibold text-foreground">
+          <h2 id="servicios" className="scroll-mt-6 font-serif text-3xl font-semibold text-foreground">
             Servicios
           </h2>
           {groups.map((g) => (
             <div key={g.key} className="flex flex-col gap-3">
-              <h3 className="text-lg font-semibold text-foreground">{g.title}</h3>
-              <ul className="flex flex-col divide-y rounded-xl border bg-card">
+              <h3 className="font-sans text-sm font-medium tracking-[0.14em] text-gold uppercase">{g.title}</h3>
+              <ul className="glass flex flex-col divide-y divide-border rounded-[1.25rem]">
                 {g.items.map((s) => {
                   const photo = catalogPhotoUrl(s.photo_path);
                   const who = s.professional_ids.map(proName).filter(Boolean);
@@ -35,7 +35,7 @@ export function CatalogSections({ catalog, bookingEnabled }: { catalog: PublicCa
                     <li key={s.id} className="flex gap-4 p-4">
                       {photo && (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={photo} alt="" className="size-20 shrink-0 rounded-lg object-cover" />
+                        <img src={photo} alt="" className="size-20 shrink-0 rounded-xl object-cover" />
                       )}
                       <div className="flex min-w-0 flex-1 flex-col gap-1">
                         <div className="flex flex-wrap items-baseline justify-between gap-x-3">
@@ -69,7 +69,7 @@ export function CatalogSections({ catalog, bookingEnabled }: { catalog: PublicCa
 
       {catalog.professionals.length > 0 && (
         <section aria-labelledby="profesionales" className="flex flex-col gap-3">
-          <h2 id="profesionales" className="text-2xl font-semibold text-foreground">
+          <h2 id="profesionales" className="font-serif text-3xl font-semibold text-foreground">
             Profesionales
           </h2>
           <ul className="grid gap-3 sm:grid-cols-2">
@@ -77,12 +77,12 @@ export function CatalogSections({ catalog, bookingEnabled }: { catalog: PublicCa
               const photo = catalogPhotoUrl(p.photo_path);
               const services = p.service_ids.map((id) => catalog.services.find((s) => s.id === id)?.name).filter(Boolean);
               return (
-                <li key={p.id} className="flex gap-3 rounded-xl border bg-card p-4">
+                <li key={p.id} className="glass flex gap-3 rounded-[1.25rem] p-4">
                   {photo ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={photo} alt={`Foto de ${p.display_name}`} className="size-16 shrink-0 rounded-full object-cover" />
                   ) : (
-                    <span aria-hidden className="flex size-16 shrink-0 items-center justify-center rounded-full bg-secondary text-xl font-semibold text-secondary-foreground">
+                    <span aria-hidden className="flex size-16 shrink-0 items-center justify-center rounded-full border border-[#4a3d39] bg-[radial-gradient(circle_at_30%_25%,#5a4841,#241c1a)] font-serif text-2xl text-[#efdcd0]">
                       {p.display_name.slice(0, 1).toUpperCase()}
                     </span>
                   )}

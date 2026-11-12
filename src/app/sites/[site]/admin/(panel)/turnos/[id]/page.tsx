@@ -59,7 +59,7 @@ export default async function TurnoPage({ params }: PageProps<"/sites/[site]/adm
       <Link href={`/admin/turnos?dia=${ymdIn(a.starts_at, tz)}`} className="text-sm text-foreground underline underline-offset-4">← Turnos del día</Link>
       <PageHeader title={`${a.service_name} · ${formatTime(a.starts_at, tz)}`} description={`Código ${a.code}`} />
 
-      <section aria-label="Detalle" className="flex flex-col gap-3 rounded-xl border bg-card p-5 text-card-foreground">
+      <section aria-label="Detalle" className="flex flex-col gap-3 glass rounded-[1.1rem] p-5 text-card-foreground">
         <div className="flex flex-wrap gap-1">
           <Badge tone={st === "pending_payment" ? "warn" : "muted"}>{STATUS_LABEL[st]}</Badge>
           <Badge>{DEPOSIT_LABEL[a.deposit_status]}</Badge>
@@ -96,14 +96,14 @@ export default async function TurnoPage({ params }: PageProps<"/sites/[site]/adm
       </section>
 
       {st === "pending_payment" && (can(ctx, "cash.manage") || can(ctx, "agenda.manage")) && (
-        <section aria-labelledby="acciones" className="flex flex-col gap-4 rounded-xl border bg-card p-5">
+        <section aria-labelledby="acciones" className="flex flex-col gap-4 glass rounded-[1.1rem] p-5">
           <h2 id="acciones" className="font-semibold">Acciones</h2>
           {can(ctx, "cash.manage") && (
             <form action={markPaidOfflineAction} className="flex flex-col gap-2">
               <input type="hidden" name="id" value={a.id} />
               <Label htmlFor="method">La clienta pagó la seña ({formatMoney(a.deposit_minor, a.currency)}) por</Label>
               <div className="flex gap-2">
-                <select id="method" name="method" className="h-11 flex-1 rounded-lg border border-input bg-background px-3 text-base">
+                <select id="method" name="method" className="h-11 flex-1 rounded-xl border border-input/80 bg-[#141010]/80 px-3 text-base">
                   <option value="transfer">Transferencia</option>
                   <option value="cash">Efectivo</option>
                 </select>
@@ -116,7 +116,7 @@ export default async function TurnoPage({ params }: PageProps<"/sites/[site]/adm
               <input type="hidden" name="id" value={a.id} />
               <Label htmlFor="reason">Cancelar (sin seña cobrada)</Label>
               <div className="flex gap-2">
-                <input id="reason" name="reason" maxLength={200} placeholder="Motivo (opcional)" className="h-11 flex-1 rounded-lg border border-input bg-background px-3 text-base" />
+                <input id="reason" name="reason" maxLength={200} placeholder="Motivo (opcional)" className="h-11 flex-1 rounded-xl border border-input/80 bg-[#141010]/80 px-3 text-base" />
                 <Button type="submit" variant="destructive" className="h-11">Cancelar turno</Button>
               </div>
             </form>
@@ -127,7 +127,7 @@ export default async function TurnoPage({ params }: PageProps<"/sites/[site]/adm
       {payments.length > 0 && (
         <section aria-labelledby="pagos" className="flex flex-col gap-2">
           <h2 id="pagos" className="font-semibold text-foreground">Pagos con Mercado Pago</h2>
-          <ul className="flex flex-col divide-y rounded-xl border bg-card">
+          <ul className="flex flex-col divide-y glass rounded-[1.1rem]">
             {payments.map((p) => (
               <li key={p.id} className="flex flex-col p-3 text-sm">
                 <span className="font-medium text-card-foreground">
@@ -146,7 +146,7 @@ export default async function TurnoPage({ params }: PageProps<"/sites/[site]/adm
 
       <section aria-labelledby="historial" className="flex flex-col gap-2">
         <h2 id="historial" className="font-semibold text-foreground">Historial</h2>
-        <ol className="flex flex-col divide-y rounded-xl border bg-card">
+        <ol className="flex flex-col divide-y glass rounded-[1.1rem]">
           {events.map((e) => (
             <li key={e.id} className="flex flex-col p-3 text-sm">
               <span className="font-medium text-card-foreground">

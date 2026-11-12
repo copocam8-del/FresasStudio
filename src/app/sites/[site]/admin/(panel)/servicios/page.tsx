@@ -54,7 +54,7 @@ export default async function ServicesPage({ params }: PageProps<"/sites/[site]/
           {g.items.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin servicios en esta categoría.</p>
           ) : (
-            <ul className="flex flex-col divide-y rounded-xl border bg-card">
+            <ul className="flex flex-col divide-y glass rounded-[1.1rem]">
               {g.items.map((s, i) => (
                 <li key={s.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex min-w-0 flex-col gap-1">
@@ -94,7 +94,7 @@ export default async function ServicesPage({ params }: PageProps<"/sites/[site]/
       ))}
 
       {canEdit && archived.length > 0 && (
-        <details className="rounded-xl border bg-card p-4">
+        <details className="glass rounded-[1.1rem] p-4">
           <summary className="cursor-pointer font-medium text-card-foreground">Archivados ({archived.length})</summary>
           <ul className="mt-3 flex flex-col gap-2">
             {archived.map((s) => (

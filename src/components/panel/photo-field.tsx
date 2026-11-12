@@ -15,7 +15,7 @@ export function PhotoField({
       <legend className="mb-1 text-sm font-medium text-card-foreground">{label}</legend>
       {currentUrl && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={currentUrl} alt="" className="h-24 w-24 rounded-lg border object-cover" />
+        <img src={currentUrl} alt="" className="h-24 w-24 rounded-2xl border border-border object-cover" />
       )}
       <Label htmlFor="photo" className="sr-only">
         {currentUrl ? "Reemplazar foto" : "Subir foto"}

@@ -68,7 +68,7 @@ export default async function BookingPage({ params, searchParams }: PageProps<"/
 
   return (
     <BookingShell studio={studio} step={4} title={pending ? "¡Te guardamos el horario!" : `Reserva ${STATUS[b.status].toLowerCase()}`}>
-      <section aria-label="Tu reserva" className="flex flex-col gap-3 rounded-xl border bg-card p-5 text-card-foreground">
+      <section aria-label="Tu reserva" className="flex flex-col gap-3 glass rounded-[1.1rem] p-5 text-card-foreground">
         <p className="text-sm text-muted-foreground">
           Código <span className="font-mono text-base font-semibold text-card-foreground">{b.code}</span>
         </p>
@@ -93,7 +93,7 @@ export default async function BookingPage({ params, searchParams }: PageProps<"/
       </section>
 
       {pending && b.hold_expires_at && (
-        <section aria-labelledby="pago" className="flex flex-col gap-3 rounded-xl border-2 border-primary bg-card p-5 text-card-foreground">
+        <section aria-labelledby="pago" className="glass flex flex-col gap-3 rounded-[1.25rem] !border-[#d7baaa]/70 p-5 text-card-foreground">
           <h2 id="pago" className="font-semibold">Pagá la seña para confirmar</h2>
           <p className="text-sm">
             Tenés hasta las {formatTime(b.hold_expires_at, tz)} (quedan <Countdown until={b.hold_expires_at} />). Si no se paga,
@@ -134,7 +134,7 @@ export default async function BookingPage({ params, searchParams }: PageProps<"/
       )}
 
       {refund && (
-        <section aria-label="Devolución" className="flex flex-col gap-1 rounded-xl border bg-card p-5 text-sm text-card-foreground">
+        <section aria-label="Devolución" className="flex flex-col gap-1 glass rounded-[1.1rem] p-5 text-sm text-card-foreground">
           <p className="font-semibold">
             {refund.refund_status === "done"
               ? `Te devolvimos ${formatMoney(refund.amount_minor, refund.currency)}`
