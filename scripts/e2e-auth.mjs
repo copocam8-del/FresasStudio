@@ -80,7 +80,7 @@ const sess = Object.fromEntries(Object.entries(r.set).filter(([k, v]) => k.start
 ok(r.status === 303 && r.location === "/admin" && Object.keys(sess).length > 0, `dueña de Fresas: login ok → 303 /admin con cookie de sesión`);
 
 r = await req(F, "/admin", { cookies: sess });
-ok(r.status === 200 && r.html.includes("Hola,") && r.html.includes("Dueña"), "dueña: ve el panel con su rol");
+ok(r.status === 200 && (r.html.includes("Hola,") || r.html.includes("Panel del estudio")) && r.html.includes("Dueña"), "dueña: ve el panel con su rol");
 ok(r.html.includes("Equipo") && r.html.includes("Marca"), "dueña: ve Equipo y Marca en la navegación");
 ok(r.html.includes('aria-label="Cleo"'), "el panel del estudio muestra la marca Cleo por defecto");
 

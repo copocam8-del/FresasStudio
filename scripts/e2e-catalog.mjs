@@ -190,7 +190,7 @@ ok(site.includes('aria-label="Cleo"'), "sitio: con la marca Cleo por defecto");
 ok(site.includes('href="/reservar"') && site.includes("Reservar turno"),
    "sitio: con las reservas online prendidas (seed de desarrollo) ofrece «Reservar turno»");
 r = await req("estudio-prueba.localhost:3000", "/");
-ok(r.status === 200 && !r.html.includes(">Servicios<") && !r.html.includes("Esmaltado"), "Estudio Prueba: no muestra nada del catálogo de Fresas");
+ok(r.status === 200 && !r.html.includes('id="servicios"') && !r.html.includes(">Servicios<") && !r.html.includes("Esmaltado"), "Estudio Prueba: no muestra nada del catálogo de Fresas (ni la sección Servicios)");
 
 // ---------------------------------------------------------------------
 // Fotos (bucket "catalog", Storage real)

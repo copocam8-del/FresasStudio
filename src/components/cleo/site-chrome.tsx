@@ -13,17 +13,19 @@ export function SiteChrome({
   brand,
   signedIn,
   bookingEnabled,
+  hasServices,
   children,
 }: {
   brand: BrandInfo;
   signedIn: boolean;
   bookingEnabled: boolean;
+  hasServices: boolean;
   children: React.ReactNode;
 }) {
   const items: NavItem[] = [
     { href: "/", label: "Inicio", icon: "home" },
     ...(bookingEnabled ? [{ href: "/reservar", label: "Reservar", icon: "book" } as NavItem] : []),
-    { href: "/#servicios", label: "Servicios", icon: "sparkles" },
+    ...(hasServices ? [{ href: "/#servicios", label: "Servicios", icon: "sparkles" } as NavItem] : []),
     { href: signedIn ? "/mi-ficha" : "/ingresar?next=%2Fmi-ficha", label: "Mis turnos", icon: "calendar" },
   ];
   return (

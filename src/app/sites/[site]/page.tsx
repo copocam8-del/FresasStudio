@@ -41,7 +41,7 @@ export default async function StudioHome({ params }: PageProps<"/sites/[site]">)
   ].slice(0, 4);
 
   return (
-    <SiteChrome brand={studioBrand(studio)} signedIn={Boolean(user)} bookingEnabled={bookingEnabled}>
+    <SiteChrome brand={studioBrand(studio)} signedIn={Boolean(user)} bookingEnabled={bookingEnabled} hasServices={Boolean(catalog && catalog.services.length > 0)}>
       <section aria-labelledby="hola" className="relative -mt-1 flex flex-col gap-2">
         <Sparkle className="pointer-events-none absolute -top-5 right-[22%] size-[2.9rem] drop-shadow-[0_0_12px_rgb(240_215_200/0.4)]" />
         <h1 id="hola" className="font-sans text-[2.15rem] leading-tight font-semibold tracking-normal text-foreground">
