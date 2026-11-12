@@ -439,6 +439,21 @@ Para producción, agregar en el mismo cliente el URI del proyecto de producción
 - **Backups y monitoreo (ARC-09):** se configuran en Supabase (PITR) y Render.
 - **Rol Profesional:** hoy tiene `clients.read` y ve todas las clientas del estudio; con la
   agenda conviene limitarlo a sus propias clientas.
+- **Antes del lanzamiento — prueba con el Mercado Pago real (sandbox):** hasta ahora los pagos
+  se probaron de punta a punta contra un Mercado Pago **simulado** (`npm run e2e:pagos`). Falta
+  la prueba con Mercado Pago de verdad, con cuentas de prueba:
+  1. Crear la aplicación "Cleo Suite" en Mercado Pago Developers con la cuenta de Cleo
+     ([plan §14](docs/sprint-5-plan.md)) y las cuentas de prueba vendedora y compradora.
+  2. Abrir un túnel HTTPS (`npx cloudflared tunnel --url http://localhost:3000`) y registrar en
+     la aplicación la URL de vuelta (`/api/pagos/mp/vuelta`, con PKCE y renovación) y la de
+     webhooks (`/api/pagos/mp/webhook`, evento Pagos).
+  3. Cargar las variables de Mercado Pago en `.env.local` (ver `.env.example`).
+  4. Recorrer el checklist manual del Sprint 5 (más arriba, sección "Checklist manual").
+  Hay que confirmar en esa prueba tres cosas que la documentación de Mercado Pago no deja del
+  todo claras: que los avisos de pagos hechos con el token de un estudio conectado por OAuth
+  llegan a la URL de webhooks de la aplicación con su `user_id` y firmados; que el canje del
+  código funciona con las credenciales de la aplicación sin `test_token`; y qué formato tiene
+  el `scope` de los tokens (`offline_access`). Si algo difiere, se ajusta antes de lanzar.
 - **Mercado Pago en producción:** credenciales de producción de la aplicación (pide datos del
   negocio), URL de vuelta y de webhooks con `cleo.com.ar`, variables en Render y secretos del
   Vault (ver "Mercado Pago (por entorno)").

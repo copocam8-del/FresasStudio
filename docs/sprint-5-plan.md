@@ -1,7 +1,8 @@
 # Sprint 5 — Plan: Mercado Pago y pagos (Épica 06)
 
-> Estado: **implementado** (pasos 0 a 8). Pendiente: aplicar las migraciones en desarrollo, el
-> e2e con Mercado Pago simulado y la prueba en el sandbox de Mercado Pago (§13).
+> Estado: **implementado** (pasos 0 a 8), migraciones aplicadas en desarrollo y e2e con Mercado
+> Pago simulado en verde (`npm run e2e:pagos`). Pendiente **antes del lanzamiento**: la prueba con
+> el Mercado Pago real y cuentas de prueba (§13, §14), anotada en el README.
 > Hosting: **Render** (Web Service), no Vercel. Las variables de entorno van en Render.
 >
 > **Render y los webhooks:** Mercado Pago espera la respuesta en 22 segundos. Una instancia
