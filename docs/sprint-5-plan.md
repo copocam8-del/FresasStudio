@@ -1,12 +1,28 @@
 # Sprint 5 — Plan: Mercado Pago y pagos (Épica 06)
 
-> Estado: **aprobado** (P1–P10 y la corrección del pago tardío del Sprint 4). En implementación.
+> Estado: **implementado** (pasos 0 a 8). Pendiente: aplicar las migraciones en desarrollo, el
+> e2e con Mercado Pago simulado y la prueba en el sandbox de Mercado Pago (§13).
 > Hosting: **Render** (Web Service), no Vercel. Las variables de entorno van en Render.
 >
 > **Render y los webhooks:** Mercado Pago espera la respuesta en 22 segundos. Una instancia
 > gratuita de Render se duerme tras 15 minutos sin tráfico y tarda en despertar, así que el
 > primer aviso podría perderse. Mercado Pago reintenta y la revisión cada 10 minutos (P9) lo
 > levanta igual, pero en producción conviene una instancia paga (que no se duerme).
+>
+> **Cambios de implementación respecto del plan:**
+> - **Webhook:** se configura una sola URL en la aplicación (Webhooks → Configurar
+>   notificaciones), sin `notification_url` por preferencia ni `?c=<cuenta>`. El estudio sale del
+>   `user_id` del aviso (la cuenta conectada por OAuth). La firma no se rechaza por antigüedad
+>   del `ts` (los reintentos llegan tarde y repetir no tiene efecto).
+> - **Modo prueba:** se detecta por la cuenta (`/users/me` con la etiqueta `test_user`), no por
+>   el `live_mode` de cada pago.
+> - **Cifrado:** el "dato asociado" ata cada token al estudio (y al tipo de token).
+> - **Devolución por pago duplicado** (`duplicate`): si la seña ya estaba pagada (otro pago o
+>   cobrada en el estudio), el pago de más se devuelve solo.
+> - **Concurrencia:** los pagos de una misma reserva se ordenan bloqueando la reserva al
+>   principio (el test de 20 pagos simultáneos encontró un deadlock con el orden original).
+> - **Desarrollo:** el seed suma `dev_restore_seed_payments` para que el e2e de pagos deje
+>   Fresas como el seed (pagos "conectados" para el pago simulado de los otros e2e).
 
 Backlog: PAY-01 a PAY-06 completos, la parte de PAY-08 que hace falta para los pagos tardíos
 (devolución automática y desconexión) y QA-03 (pruebas de pagos y webhooks). PAY-07 (saldos

@@ -14,6 +14,12 @@ un estudio se ve solo su nombre, sus colores y su logo; nunca "Cleo".
 - Sprint 4 ([plan](docs/sprint-4-plan.md)): motor de reservas. Disponibilidad en el servidor,
   bloqueo temporal hasta pagar la seña (2 h), doble reserva imposible (restricción de la base
   y test de concurrencia), foto de lo acordado, código, historial, turno manual y reglas.
+- Sprint 5 ([plan](docs/sprint-5-plan.md)): Mercado Pago. Cada estudio conecta su cuenta por
+  OAuth (tokens cifrados, renovación automática), la seña se cobra con Checkout Pro en la cuenta
+  del estudio y la reserva se confirma solo con el pago verificado contra la API (webhook
+  idempotente + revisión cada 10 min). Pago tardío, devoluciones automáticas y conciliación.
+
+Hosting: **Render** (Web Service). Ver "Infraestructura" en `CLAUDE.md`.
 
 ## Estructura
 
@@ -30,8 +36,10 @@ src/
       admin/                   panel del estudio: login, recuperar, restablecer, invitación,
                                inicio, turnos (+ manual), servicios (+ categorías),
                                profesionales, horarios, bloqueos, equipo, reglas de reservas,
-                               marca (colores y logo)
+                               marca (colores y logo), Mercado Pago (conectar, pagos recibidos)
+    api/pagos/                 Mercado Pago, en cualquier host: vuelta de OAuth, webhook, tareas internas
   lib/                         host, auth (DAL), validación, color/contraste, marca, Supabase
+  lib/payments/                cifrado, firma de webhooks, cliente de Mercado Pago, cuentas y flujos (server-only)
 supabase/
   migrations/
     20261110000100_foundation.sql      estudios, configuración, políticas versionadas, perfiles, superadmins
@@ -56,19 +64,24 @@ supabase/
     20261110002000_staff_booking.sql   turno manual, seña cobrada, cancelar sin seña, confirmación por pago
     20261110002100_booking_preview.sql vista previa del resumen (quién atiende y cuánto sale)
     20261110002200_expire_holds_cron.sql  limpieza de bloqueos vencidos cada minuto (pg_cron, Supabase)
+    20261110002300_payment_accounts.sql   cuentas de Mercado Pago por estudio, tokens cifrados, OAuth (state)
+    20261110002400_payments.sql        links de pago, pagos, eventos, avisos, devoluciones, pago tardío
+    20261110002500_payments_cron.sql   revisión de pagos cada 10 min y tareas diarias (pg_cron + pg_net)
   seed.sql                             SOLO desarrollo: Fresas Studio + Estudio Prueba (idempotente)
 db/
   local/00_supabase_shim.sql           SOLO local: imita auth, roles y Storage de Supabase
   tests/lib/setup.sql, finish.sql      framework común (transacción, asserts, atajos de sesión)
-  tests/01…17_*.sql                    aislamiento, renombre, seed, dominios, equipo, fichas, marca,
+  tests/01…19_*.sql                    aislamiento, renombre, seed, dominios, equipo, fichas, marca,
                                        catálogo, horarios, catálogo público, RPC de horarios, reglas
                                        de reservas, reservas, disponibilidad, reserva online, panel
-                                       y vista previa
+                                       y vista previa, cuentas de Mercado Pago y pagos
   tests/concurrency/booking_race.sh    20 clientas a la vez por el mismo horario (base comprometida)
+  tests/concurrency/payment_race.sh    20 avisos del mismo pago / 20 pagos de la misma reserva a la vez
 scripts/
   test-db.sh                           levanta Postgres temporal, migra, siembra y testea (Linux y Windows)
   e2e-auth.mjs, e2e-catalog.mjs,       pruebas de punta a punta contra la app y Supabase de desarrollo
   e2e-booking.mjs                      (incluye 10 envíos simultáneos al mismo horario)
+  e2e-payments.mjs, fake-mercadopago.mjs  Mercado Pago de punta a punta con un Mercado Pago simulado
   e2e-lib.mjs                          helpers compartidos de los e2e
 ```
 
@@ -123,7 +136,17 @@ npm run lint
 # De punta a punta, contra la app compilada y el Supabase de DESARROLLO:
 npm run build && npx next start -p 3000   # en otra terminal
 npm run e2e           # e2e-auth.mjs, e2e-catalog.mjs y e2e-booking.mjs
+
+# Mercado Pago de punta a punta (levanta su propio next start con un Mercado Pago simulado
+# en localhost:4010; necesita npm run build, el puerto 3000 libre y SUPABASE_SECRET_KEY de
+# DESARROLLO en .env.local):
+npm run e2e:pagos
 ```
+
+`e2e:pagos` conecta Mercado Pago por OAuth (con PKCE), paga señas, manda avisos firmados (y
+mal firmados, repetidos y en paralelo), prueba la revisión sin webhook, la devolución de un
+pago tardío, la renovación y la revocación de tokens, la conciliación y desconectar. Al final
+deja Fresas como el seed (`dev_restore_seed_payments`, que solo existe en el seed).
 
 `test-db.sh` corre todo dentro de una transacción que se descarta, en un Postgres temporal
 propio (puerto 54329) que borra al terminar. Requiere PostgreSQL 15 o superior. Al final corre
@@ -179,6 +202,23 @@ npx supabase@3.1.0 db push --remote=<ref-de-produccion>
 - Superadministradora de producción, desde el SQL editor:
   `insert into public.platform_admins (user_id) values ('<uuid de auth.users>');`
 
+### Mercado Pago (por entorno)
+
+1. Crear la aplicación en Mercado Pago Developers (paso a paso en
+   [docs/sprint-5-plan.md §14](docs/sprint-5-plan.md)).
+2. Cargar las variables de `.env.example` (sección Mercado Pago) en `.env.local` (desarrollo) o
+   en **Render → el Web Service → Environment** (producción). Ninguna lleva `NEXT_PUBLIC_`.
+   `PAYMENTS_ENCRYPTION_KEY` tiene que ser distinta en cada entorno.
+3. Revisión cada 10 minutos: en el **SQL editor** de Supabase, una sola vez por entorno:
+   ```sql
+   select vault.create_secret('https://cleo.com.ar', 'cleo_app_url');      -- URL de la app en Render
+   select vault.create_secret('<el mismo CRON_SECRET de Render>', 'cleo_cron_secret');
+   ```
+   Sin esos secretos la tarea no hace nada (los avisos de Mercado Pago siguen funcionando).
+   Para cambiar uno: `select vault.update_secret((select id from vault.secrets where name = 'cleo_app_url'), '<nuevo>');`
+4. **Render:** una instancia gratuita se duerme sin tráfico y el primer aviso de Mercado Pago
+   puede perderse (Mercado Pago reintenta y la revisión lo levanta). En producción, instancia paga.
+
 ### Configuración de Auth (en el panel de Supabase, por entorno)
 
 **Authentication → URL Configuration**
@@ -220,6 +260,17 @@ La pantalla de consentimiento de Google es una sola para todos los estudios y di
 Para producción, agregar en el mismo cliente el URI del proyecto de producción.
 
 ## Checklist manual (lo que el e2e no cubre)
+
+**Sprint 5 — Mercado Pago con cuentas de prueba (ver [plan §13](docs/sprint-5-plan.md)):**
+- [ ] Como dueña, en «Mercado Pago», conectar la cuenta **vendedora de prueba**: vuelve con
+      «Conectado como …» y «Cuenta de prueba».
+- [ ] Como clienta (celular o 375 px): reservar, «Pagar seña» → Checkout de Mercado Pago con
+      el monto de la seña y el nombre del estudio → pagar con la **compradora de prueba** y
+      tarjeta `APRO` → vuelve a «Estamos verificando…» → «Confirmada».
+- [ ] Pagar con titular `OTHE`: «El pago no se aprobó» y la reserva sigue esperando pago.
+- [ ] Reenviar un aviso desde el panel de Mercado Pago (Webhooks → simular): nada se duplica.
+- [ ] Ver el pago en «Pagos» (comisión y neto) y bajar el CSV.
+- [ ] Desconectar: se apagan las reservas online.
 
 **Sprint 4 — reservas (celular real o 375 px):**
 - [ ] Como clienta (Google o `clienta01@e2e.test`): Reservar → servicio → «Cualquiera
@@ -336,6 +387,25 @@ Para producción, agregar en el mismo cliente el URI del proyecto de producción
   (permiso de caja), que queda registrada.
 - La clienta ve solo sus reservas; la profesional, solo sus turnos; Cleo Admin, ninguna.
 
+**Pagos (Mercado Pago)**
+- Cada estudio cobra en **su** cuenta: la conecta solo la dueña (`payments.manage`) por OAuth con
+  PKCE y un `state` de un solo uso, atado a ella y al estudio. Una cuenta de Mercado Pago no se
+  puede conectar a dos estudios.
+- Los tokens se cifran en el servidor (AES-256-GCM, clave en Render, atados al estudio) y la
+  tabla no tiene políticas ni grants: ni la dueña ni Cleo Admin la leen. Se renuevan solos (una
+  renovación a la vez); si Mercado Pago revoca el acceso, el estudio queda «volver a conectar» y
+  se apagan las reservas online.
+- Una reserva se confirma solo cuando el servidor consulta el pago a la API de Mercado Pago y
+  coinciden cuenta, link de pago del mismo estudio, monto y moneda. Volver de Mercado Pago no
+  confirma nada.
+- Idempotencia: un pago existe una sola vez (`provider_payment_id` único) y cada aviso se
+  guarda una vez (`x-request-id`). Probado con 20 avisos iguales a la vez y 20 pagos distintos
+  de la misma reserva a la vez (uno confirma, los demás se devuelven).
+- Pago tardío: si el horario sigue libre, confirma; si no, se devuelve el 100% solo. La base
+  sigue impidiendo la superposición.
+- El registro de pagos y su historial (solo agregado) lo ven quienes tienen caja o la agenda
+  completa. La profesional, la clienta (salvo el resultado de su reserva) y Cleo Admin, no.
+
 **Auditoría**
 - Se registra quién hizo cada cambio en estudios, configuración, roles, membresías,
   invitaciones, dominios, fichas, servicios, profesionales, horarios y bloqueos. Las reservas
@@ -369,11 +439,10 @@ Para producción, agregar en el mismo cliente el URI del proyecto de producción
 - **Backups y monitoreo (ARC-09):** se configuran en Supabase (PITR) y Render.
 - **Rol Profesional:** hoy tiene `clients.read` y ve todas las clientas del estudio; con la
   agenda conviene limitarlo a sus propias clientas.
-- **Mercado Pago (Sprint 5):** OAuth por estudio, botón "Pagar seña", webhook verificado contra
-  la API que llama a `app.confirm_deposit_payment` y marca `payments_connected`. Mientras tanto
-  las reservas online no se pueden prender en producción.
-- **Pago que llega tarde** (reserva ya vencida o cancelada): queda para devolución o crédito
-  (Sprint 5 / Épica 07).
+- **Mercado Pago en producción:** credenciales de producción de la aplicación (pide datos del
+  negocio), URL de vuelta y de webhooks con `cleo.com.ar`, variables en Render y secretos del
+  Vault (ver "Mercado Pago (por entorno)").
+- **Cobro del saldo y caja** (PAY-07, Épica 09): el registro de pagos ya queda listo para la caja.
 - **Cancelar y reprogramar con seña** (ventana de 24 h, crédito o pérdida): Épica 07.
 - **Agenda visual** por día y semana: Épica 08. Al bloquear un día que ya tiene turnos, avisar.
 - **Estudio Prueba** sigue con ventana de 48 h: la migración cambió el valor por defecto y

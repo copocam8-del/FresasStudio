@@ -119,6 +119,18 @@ El frontend **muestra** importes y consecuencias; el servidor/base **decide**.
 - Fechas y horas siempre en la zona del estudio (`src/lib/booking-format.ts`).
 - Cambios en reservas: correr también el test de concurrencia (`./scripts/test-db.sh` lo incluye).
 
+## Regla 5 — Mercado Pago
+
+- Cada estudio cobra en **su** cuenta (OAuth). Los tokens se cifran en el servidor
+  (`src/lib/payments/crypto.ts`) y solo se leen con las funciones `svc_mp_*` (únicamente
+  `service_role`, vía `src/lib/payments/service-client.ts`). Nunca en logs ni respuestas.
+- Un pago se registra SOLO después de consultarlo a la API de Mercado Pago con el token del
+  estudio (`processPayment` → `svc_mp_sync_payment`); la base decide con `app.apply_mp_payment`.
+  Ni el aviso ni la vuelta del Checkout confirman nada.
+- `tenant_settings.payments_connected` solo lo cambian las funciones de conexión. Con
+  `MP_API_BASE_URL` solo se puede apuntar a `localhost` (Mercado Pago simulado de los e2e).
+- Cambios en pagos: `./scripts/test-db.sh` (incluye `payment_race.sh`) y `npm run e2e:pagos`.
+
 ## Convenciones de código
 
 - Server Components por defecto; `"use client"` solo cuando hace falta interactividad.
