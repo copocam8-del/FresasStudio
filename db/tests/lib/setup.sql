@@ -16,11 +16,11 @@ begin;
 -- Mini framework de tests
 -- ---------------------------------------------------------------------
 create schema tests;
-grant usage on schema tests to anon, authenticated;
+grant usage on schema tests to anon, authenticated, service_role;
 
 create table tests.results (n serial primary key, ok boolean not null, name text not null);
-grant select, insert on tests.results to anon, authenticated;
-grant usage on sequence tests.results_n_seq to anon, authenticated;
+grant select, insert on tests.results to anon, authenticated, service_role;
+grant usage on sequence tests.results_n_seq to anon, authenticated, service_role;
 
 create function tests.login(p_email text) returns void
 language plpgsql security definer as $$
@@ -78,6 +78,7 @@ end $$;
 \set as_pro_a     'reset role; do $x$ begin perform tests.login(''profesional@fresasstudio.test''); end $x$; set local role authenticated;'
 \set as_owner_b   'reset role; do $x$ begin perform tests.login(''duena@estudioprueba.test''); end $x$; set local role authenticated;'
 \set as_nueva     'reset role; do $x$ begin perform tests.login(''nueva@fresasstudio.test''); end $x$; set local role authenticated;'
+\set as_service   'reset role; do $x$ begin perform tests.login(null); end $x$; set local role service_role;'
 \set as_externa   'reset role; do $x$ begin perform tests.login(''externa@otro.test''); end $x$; set local role authenticated;'
 
 \set A '''10000000-0000-4000-a000-000000000001'''
