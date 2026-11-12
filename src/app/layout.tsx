@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Geist_Mono, Outfit } from "next/font/google";
+import { CleoSvgDefs } from "@/components/cleo/svg-defs";
 import "./globals.css";
 
 // Tipografías de Cleo (docs/diseno-plan.md §2). next/font las sirve desde el propio
@@ -34,7 +35,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="es-AR"
       className={`${cormorant.variable} ${outfit.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <CleoSvgDefs />
+        {children}
+      </body>
     </html>
   );
 }

@@ -72,47 +72,47 @@
  *    fondo, nunca texto chico. No existe --gold-foreground a propósito.
  */
 :root {
-  --background: #0d0a09;                       /* negro cálido */
-  --foreground: #f4ece6;                       /* marfil */
-  --card: #171210;
-  --card-foreground: #f4ece6;
-  --popover: #1b1513;
-  --popover-foreground: #f4ece6;
-  --primary: #d8b9a4;                          /* champagne */
-  --primary-foreground: #1c130f;
-  --secondary: #211a17;
-  --secondary-foreground: #f4ece6;
-  --muted: #211a17;
-  --muted-foreground: #b3a49b;
-  --accent: #2a211e;                           /* hover de filas e ítems */
-  --accent-foreground: #f4ece6;
-  --gold: #c9a48c;                             /* rosado dorado: solo acento */
-  --destructive: #f0918a;
-  --border: oklch(0.83 0.04 50 / 14%);         /* borde fino champagne */
-  --input: #76665e;                            /* borde de campos: >= 3:1 */
-  --ring: #e2c4b0;
-  --chart-1: #d8b9a4;
-  --chart-2: #c9a48c;
+  --background: #0e0b0c;                       /* negro cálido (ref #0E0B0D / #100D0D) */
+  --foreground: #f7efe8;                       /* marfil casi blanco, como en las refs */
+  --card: #171211;
+  --card-foreground: #f7efe8;
+  --popover: #1c1615;
+  --popover-foreground: #f7efe8;
+  --primary: #d7baaa;                          /* champagne (ítem activo de la ref) */
+  --primary-foreground: #140d09;
+  --secondary: #221b1a;
+  --secondary-foreground: #f7efe8;
+  --muted: #221b1a;
+  --muted-foreground: #cfc2b9;                 /* bajadas: claras, como en las refs */
+  --accent: #2a2221;                           /* hover de filas e ítems */
+  --accent-foreground: #f7efe8;
+  --gold: #d9c0b1;                             /* trazos de íconos y detalles: solo acento */
+  --destructive: #f2948c;
+  --border: oklch(0.83 0.03 45 / 16%);         /* borde fino */
+  --input: #7a6a62;                            /* borde de campos: >= 3:1 */
+  --ring: #e7cdbd;
+  --chart-1: #d7baaa;
+  --chart-2: #b99c8b;
   --chart-3: #a9dcb4;
   --chart-4: #8f7a6e;
-  --chart-5: #f4ece6;
+  --chart-5: #f7efe8;
   --radius: 0.875rem;
-  --sidebar: #120e0c;
-  --sidebar-foreground: #f4ece6;
-  --sidebar-primary: #d8b9a4;
-  --sidebar-primary-foreground: #1c130f;
-  --sidebar-accent: #2a211e;
-  --sidebar-accent-foreground: #f4ece6;
-  --sidebar-border: oklch(0.83 0.04 50 / 14%);
-  --sidebar-ring: #e2c4b0;
-  --status-ok: #22362a;                        /* Confirmado */
-  --status-ok-foreground: #a9dcb4;
-  --status-pending: #d8b9a4;                   /* Pendiente */
-  --status-pending-foreground: #2a1c15;
-  --status-cancel: #4a2422;                    /* Cancelado / Venció */
-  --status-cancel-foreground: #f6b3ad;
-  --status-neutral: #2a2220;                   /* online, manual, prueba */
-  --status-neutral-foreground: #ddd0c8;
+  --sidebar: #161212;                          /* menú lateral (ref) */
+  --sidebar-foreground: #f4ede0;
+  --sidebar-primary: #d7baaa;
+  --sidebar-primary-foreground: #140d09;
+  --sidebar-accent: #2a2221;
+  --sidebar-accent-foreground: #f7efe8;
+  --sidebar-border: #2b2321;
+  --sidebar-ring: #e7cdbd;
+  --status-ok: #4d594c;                        /* Confirmado (ref) */
+  --status-ok-foreground: #fbfff9;
+  --status-pending: #b6957a;                   /* Pendiente (ref #AC8A6D) */
+  --status-pending-foreground: #120a06;
+  --status-cancel: #6e3633;                    /* Cancelado */
+  --status-cancel-foreground: #fff1ef;
+  --status-neutral: #2e2625;                   /* online, manual, prueba */
+  --status-neutral-foreground: #efe4dd;
   color-scheme: dark;
 }
 
@@ -136,21 +136,40 @@
 }
 
 @layer components {
-  /* Tarjeta de vidrio: fondo de tarjeta translúcido, desenfoque y borde fino champagne. */
+  /* Vidrio de las referencias: fondo marrón translúcido más claro arriba a la izquierda y
+     borde fino que brilla en las esquinas (degradé en el borde). */
   .glass {
     background:
-      linear-gradient(160deg, oklch(0.83 0.04 50 / 7%), transparent 40%),
-      color-mix(in oklab, var(--card) 78%, transparent);
-    border: 1px solid var(--border);
-    box-shadow: inset 0 1px 0 oklch(0.95 0.02 60 / 6%), 0 18px 40px -24px oklch(0 0 0 / 80%);
-    backdrop-filter: blur(14px);
+      linear-gradient(150deg, rgb(64 52 49 / 0.42), rgb(26 21 20 / 0.78) 42%, rgb(17 13 13 / 0.9)) padding-box,
+      linear-gradient(150deg, rgb(206 182 168 / 0.5), rgb(84 70 64 / 0.28) 30%, rgb(52 43 40 / 0.25) 72%, rgb(160 138 125 / 0.42)) border-box;
+    border: 1px solid transparent;
+    box-shadow: inset 0 1px 0 rgb(255 240 230 / 0.06), 0 20px 40px -26px rgb(0 0 0 / 0.9);
+    backdrop-filter: blur(16px);
+  }
+  /* Variante más clara (tarjetas de números del panel). */
+  .glass-strong {
+    background:
+      radial-gradient(120% 90% at 0% 0%, rgb(86 70 66 / 0.55), transparent 60%) padding-box,
+      linear-gradient(150deg, rgb(56 46 44 / 0.95), rgb(38 30 28 / 0.95) 55%, rgb(30 24 22 / 0.95)) padding-box,
+      linear-gradient(150deg, rgb(210 186 172 / 0.55), rgb(70 58 54 / 0.4) 35%, rgb(52 43 40 / 0.4) 70%, rgb(170 146 132 / 0.5)) border-box;
+    border: 1px solid transparent;
+    box-shadow: inset 0 1px 0 rgb(255 240 230 / 0.08), 0 20px 40px -24px rgb(0 0 0 / 0.9);
   }
   /* Botón con el degradé champagne de las referencias. Sale de --primary, así respeta
      el color principal de cada estudio (el texto encima sigue siendo legible: ±10%). */
+  /* Ítem activo del menú: degradé horizontal fuerte (ref #D7BAAA → #7F6559). */
+  .champagne-x {
+    background: linear-gradient(90deg,
+      color-mix(in oklab, var(--primary), white 6%),
+      color-mix(in oklab, var(--primary), black 22%) 70%,
+      color-mix(in oklab, var(--primary), black 38%));
+    color: var(--primary-foreground);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35), 0 8px 20px -10px rgb(0 0 0 / 0.8);
+  }
   .champagne {
     background: linear-gradient(180deg,
-      color-mix(in oklab, var(--primary), white 12%),
-      color-mix(in oklab, var(--primary), black 8%));
+      color-mix(in oklab, var(--primary), white 18%),
+      color-mix(in oklab, var(--primary), black 12%));
     color: var(--primary-foreground);
   }
 }

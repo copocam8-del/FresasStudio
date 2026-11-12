@@ -1,9 +1,10 @@
-import { CalendarDays, CalendarPlus, MessageCircle, Sparkles } from "lucide-react";
+import { CalendarDays, CalendarPlus, ChevronRight, MessageCircle, Sparkles, UserRound } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CleoEmblem } from "@/components/cleo/brand";
+import { BannerSilk, Sparkle } from "@/components/cleo/silk";
 import { SiteChrome } from "@/components/cleo/site-chrome";
 import { ActionTile, appointmentTone, GlassCard, StatusPill } from "@/components/cleo/ui";
+import type { LucideIcon } from "lucide-react";
 import { CatalogSections } from "@/components/site/catalog-sections";
 import { buttonVariants } from "@/components/ui/button";
 import { getUser } from "@/lib/auth";
@@ -30,44 +31,52 @@ export default async function StudioHome({ params }: PageProps<"/sites/[site]">)
   // Próximo turno de la clienta (solo si tiene sesión y uno activo).
   const next = user ? await myNextBooking(studio.slug) : null;
 
+  // Accesos (2×2 como en la referencia), solo a secciones que existen.
+  const tiles: { href: string; icon: LucideIcon; title: string; text: string }[] = [
+    ...(bookingEnabled ? [{ href: "/reservar", icon: CalendarPlus, title: "Turnos", text: "Reservá tu turno" }] : []),
+    { href: user ? "/mi-ficha" : "/ingresar?next=%2Fmi-ficha", icon: CalendarDays, title: "Mis turnos", text: user ? "Tus reservas" : "Ingresá para verlos" },
+    ...(catalog && catalog.services.length > 0 ? [{ href: "#servicios", icon: Sparkles, title: "Servicios", text: "Precios y duración" }] : []),
+    { href: user ? "/mi-ficha" : "/ingresar?next=%2Fmi-ficha", icon: UserRound, title: "Mis datos", text: user ? "Tu ficha" : "Ingresá con Google" },
+    ...(contact.length > 0 ? [{ href: "#contacto", icon: MessageCircle, title: "Contacto", text: "Escribinos" }] : []),
+  ].slice(0, 4);
+
   return (
     <SiteChrome studioName={studio.name} logoSrc={studioLogo(studio)} signedIn={Boolean(user)} bookingEnabled={bookingEnabled}>
-      <section aria-labelledby="hola" className="flex flex-col gap-2">
-        <h1 id="hola" className="font-serif text-[2.75rem] leading-none font-semibold text-foreground">
+      <section aria-labelledby="hola" className="relative -mt-1 flex flex-col gap-2">
+        <Sparkle className="pointer-events-none absolute -top-5 right-[22%] size-[2.9rem] drop-shadow-[0_0_12px_rgb(240_215_200/0.4)]" />
+        <h1 id="hola" className="font-sans text-[2.15rem] leading-tight font-semibold tracking-normal text-foreground">
           ¡Hola{firstName ? `, ${firstName}` : ""}!
         </h1>
-        <p className="flex items-center gap-2 text-lg text-muted-foreground">
-          ¿Qué querés hacer hoy? <CleoEmblem className="size-4" />
+        <p className="flex items-center gap-2.5 text-[1.07rem] text-[#ece2db]">
+          ¿Qué querés hacer hoy? <Sparkle className="size-[1.6rem]" />
         </p>
       </section>
 
-      {next && (
-        <GlassCard title="Tu próximo turno" icon={CalendarDays}>
-          <Link href={`/reserva/${next.code}`} className="-m-2 flex items-center justify-between gap-3 rounded-xl p-2 hover:bg-accent/60">
-            <span className="flex min-w-0 flex-col">
-              <span className="font-medium text-foreground">{next.service_name}</span>
-              <span className="text-sm text-muted-foreground">
-                {formatDateTimeLong(next.starts_at, studio.timezone)} · con {next.professional_name}
-              </span>
-            </span>
-            <StatusPill status={appointmentTone(next.status)}>{STATUS[next.status]}</StatusPill>
-          </Link>
-        </GlassCard>
-      )}
-
-      <nav aria-label="Accesos" className="grid grid-cols-2 gap-3">
-        {bookingEnabled && <ActionTile href="/reservar" icon={CalendarPlus} title="Reservar" text="Elegí servicio y horario" />}
-        <ActionTile
-          href={user ? "/mi-ficha" : "/ingresar?next=%2Fmi-ficha"}
-          icon={CalendarDays}
-          title="Mis turnos"
-          text={user ? "Consultá tus reservas" : "Ingresá para verlos"}
-        />
-        {catalog && catalog.services.length > 0 && (
-          <ActionTile href="#servicios" icon={Sparkles} title="Servicios" text="Precios y duración" />
-        )}
-        {contact.length > 0 && <ActionTile href="#contacto" icon={MessageCircle} title="Contacto" text="Escribinos o visitanos" />}
+      <nav aria-label="Accesos" className="grid grid-cols-2 gap-[0.85rem]">
+        {tiles.map((t, i) => (
+          <ActionTile key={t.href} href={t.href} icon={t.icon} title={t.title} text={t.text} sheen={(i % 4) as 0 | 1 | 2 | 3} />
+        ))}
       </nav>
+
+      {next && (
+        <Link
+          href={`/reserva/${next.code}`}
+          className="glass relative flex min-h-[8.4rem] items-center overflow-hidden rounded-[1.4rem] p-5 pl-6 hover:brightness-110"
+        >
+          <BannerSilk />
+          <span className="relative flex max-w-[62%] flex-col gap-1.5">
+            <span className="text-sm tracking-[0.14em] text-[#e4d3c8] uppercase">Tu próximo turno</span>
+            <span className="text-[1.45rem] leading-tight font-normal text-foreground">{next.service_name}</span>
+            <span className="text-[0.92rem] text-[#e4d8d0]">
+              {formatDateTimeLong(next.starts_at, studio.timezone)} · con {next.professional_name}
+            </span>
+            <StatusPill status={appointmentTone(next.status)} className="self-start">{STATUS[next.status]}</StatusPill>
+          </span>
+          <span className="absolute right-4 bottom-4 flex size-8 items-center justify-center rounded-full border border-[#5b4d48] bg-[#2a2324]/90">
+            <ChevronRight aria-hidden strokeWidth={1.8} className="size-4" />
+          </span>
+        </Link>
+      )}
 
       {studio.description && (
         <GlassCard>

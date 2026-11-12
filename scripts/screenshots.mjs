@@ -21,11 +21,17 @@ if (!browserPath) { console.error("No encontré Chrome ni Edge."); process.exit(
 const OUT = "docs/diseno/capturas";
 mkdirSync(OUT, { recursive: true });
 
-const SHOTS = [
+const ALL_SHOTS = [
   { name: "01-inicio-estudio-celular", url: `http://${F}/`, width: 390, height: 844, full: true, as: "clienta02@e2e.test", clientLogin: true },
   { name: "02-inicio-panel-celular", url: `http://${F}/admin`, width: 390, height: 844, full: true, as: "duena@fresasstudio.test" },
   { name: "03-inicio-panel-escritorio", url: `http://${F}/admin`, width: 1440, height: 900, full: false, as: "duena@fresasstudio.test" },
+  // Mismo tamaño que las referencias de docs/diseno (para compararlas lado a lado)
+  { name: "cmp-inicio-clienta", url: `http://${F}/`, width: 426, height: 923, full: false, scale: 2, as: "clienta02@e2e.test", clientLogin: true },
+  { name: "cmp-inicio-panel", url: `http://${F}/admin`, width: 1536, height: 1024, full: false, scale: 1, as: "duena@fresasstudio.test" },
 ];
+// node scripts/screenshots.mjs [prefijo]  → solo las capturas cuyo nombre empieza así
+const only = process.argv[2];
+const SHOTS = ALL_SHOTS.filter((s) => (only ? s.name.startsWith(only) : !s.name.startsWith("cmp-")));
 
 const port = 9333;
 const profile = join(tmpdir(), `cleo-shots-${Date.now()}`);
@@ -73,7 +79,7 @@ for (const s of SHOTS) {
     await send("Network.setCookie", { name, value, domain: "fresas.localhost", path: "/" });
   }
   await send("Emulation.setDeviceMetricsOverride", {
-    width: s.width, height: s.height, deviceScaleFactor: 2, mobile: s.width < 600,
+    width: s.width, height: s.height, deviceScaleFactor: s.scale ?? 2, mobile: s.width < 600,
   });
   const loaded = waitFor("Page.loadEventFired");
   await send("Page.navigate", { url: s.url });
