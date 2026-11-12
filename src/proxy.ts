@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { publicEnv } from "@/lib/env";
-import { classifyHost, rewritePath } from "@/lib/host";
+import { classifyHost, isPlatformApiPath, rewritePath } from "@/lib/host";
 import { withSessionRefresh } from "@/lib/supabase/session";
 
 /**
@@ -26,6 +26,9 @@ export async function proxy(request: NextRequest) {
     url.pathname = "/_not-found";
     return NextResponse.rewrite(url, { status: 404 });
   }
+
+  // Webhooks y OAuth de pagos: sin sesión ni reescritura, en cualquier host.
+  if (isPlatformApiPath(pathname)) return NextResponse.next({ request });
 
   const url = request.nextUrl.clone();
   url.pathname = target;

@@ -20,6 +20,15 @@ describe("normalizeHost", () => {
   });
 });
 
+describe("rutas de pagos de la plataforma", () => {
+  it("/api/pagos/… no se reescribe en ningún host (webhook y OAuth de Mercado Pago)", () => {
+    for (const host of ["cleo.com.ar", "fresas.cleo.com.ar", "admin.cleo.com.ar", "abc.trycloudflare.com"]) {
+      expect(rewritePath(classifyHost(host, PROD), "/api/pagos/mp/webhook")).toBe("/api/pagos/mp/webhook");
+    }
+    expect(rewritePath(classifyHost("fresas.cleo.com.ar", PROD), "/api/otra")).toBe("/sites/fresas/api/otra");
+  });
+});
+
 describe("classifyHost (producción)", () => {
   it("dominio raíz, www y la dirección de Render → sitio de Cleo", () => {
     expect(classifyHost("cleo.com.ar", PROD)).toEqual({ kind: "root" });

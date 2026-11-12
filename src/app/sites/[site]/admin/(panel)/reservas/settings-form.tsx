@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { Field, FormMessage, SubmitButton } from "@/components/form/form";
 import { Label } from "@/components/ui/label";
@@ -35,7 +36,8 @@ export function BookingSettingsForm({ s }: { s: BookingSettings }) {
             Las clientas pueden reservar desde el sitio
             {!s.payments_connected && (
               <span className="block text-muted-foreground">
-                Para activarlas primero hay que conectar Mercado Pago: toda reserva se confirma con la seña pagada.
+                Para activarlas primero hay que <Link href="/admin/pagos" className="underline">conectar Mercado Pago</Link>:
+                toda reserva se confirma con la seña pagada.
               </span>
             )}
           </span>

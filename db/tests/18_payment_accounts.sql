@@ -119,10 +119,10 @@ select id as acc from public.payment_accounts where tenant_id = :A and status = 
 :as_service
 select tests.ok((select access_token_enc = :ENC and key_version = 1 from public.svc_mp_credentials(:'acc')),
                 'servidor: lee los tokens cifrados');
-select tests.ok((select account_id = :'acc' from public.svc_mp_account_by_user(555, false)),
+select tests.ok((select account_id = :'acc' from public.svc_mp_account_by_user(555)),
                 'servidor: encuentra la cuenta por el usuario de Mercado Pago (avisos)');
-select tests.ok((select count(*) = 0 from public.svc_mp_account_by_user(555, true)),
-                'servidor: una cuenta de prueba no se confunde con una real');
+select tests.ok((select count(*) = 0 from public.svc_mp_account_by_user(556)),
+                'servidor: otro usuario de Mercado Pago no encuentra nada');
 select tests.ok(public.svc_mp_begin_refresh(:'acc'), 'renovación: toma el bloqueo');
 select tests.ok(not public.svc_mp_begin_refresh(:'acc'), 'renovación: una segunda a la vez no puede (no rompe el refresh_token)');
 select public.svc_mp_store_refresh(:'acc', 'v2.cccccccccccccccc.dddddddddddddddddddd', 'v2.cccccccccccccccc.dddddddddddddddddddd', 2::smallint, now() + interval '180 days');

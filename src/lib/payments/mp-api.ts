@@ -132,6 +132,7 @@ const meSchema = z.object({
   id: z.union([z.number(), z.string()]).transform((v) => Number(v)),
   nickname: z.string().nullish(),
   site_id: z.string(),
+  tags: z.array(z.string()).nullish(),
 });
 export type MpUser = z.infer<typeof meSchema>;
 

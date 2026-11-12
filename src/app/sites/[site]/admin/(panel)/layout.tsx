@@ -26,6 +26,7 @@ export default async function PanelLayout({ children, params }: LayoutProps<"/si
     { href: "/admin/bloqueos", label: "Bloqueos", show: true },
     { href: "/admin/equipo", label: "Equipo", show: can(ctx, "team.read") },
     { href: "/admin/reservas", label: "Reservas", show: can(ctx, "settings.manage") },
+    { href: "/admin/pagos", label: "Mercado Pago", show: can(ctx, "payments.manage") || can(ctx, "settings.manage") },
     { href: "/admin/marca", label: "Marca", show: can(ctx, "settings.manage") },
   ].filter((l) => l.show);
 

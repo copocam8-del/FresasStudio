@@ -42,7 +42,8 @@ create table public.payment_accounts (
 );
 -- Una sola cuenta activa por estudio, y una cuenta de Mercado Pago en un solo estudio.
 create unique index payment_accounts_one_active on public.payment_accounts (tenant_id) where status <> 'disconnected';
-create unique index payment_accounts_mp_user_active on public.payment_accounts (mp_user_id, live_mode) where status <> 'disconnected';
+-- (las cuentas de prueba de Mercado Pago tienen su propio id, distinto de cualquier cuenta real)
+create unique index payment_accounts_mp_user_active on public.payment_accounts (mp_user_id) where status <> 'disconnected';
 create trigger payment_accounts_updated_at before update on public.payment_accounts
   for each row execute function app.set_updated_at();
 
@@ -187,20 +188,20 @@ begin
     raise exception 'Mercado Pago devolvió datos inválidos. Probá de nuevo' using errcode = '22023';
   end if;
   if exists (select 1 from public.payment_accounts
-             where mp_user_id = p_mp_user_id and live_mode = p_live_mode
-               and status <> 'disconnected' and tenant_id <> p_tenant) then
+             where mp_user_id = p_mp_user_id and status <> 'disconnected' and tenant_id <> p_tenant) then
     raise exception 'Esa cuenta de Mercado Pago ya está conectada a otro estudio' using errcode = '22023';
   end if;
 
   select * into v_current from public.payment_accounts
    where tenant_id = p_tenant and status <> 'disconnected' for update;
 
-  if v_current.id is not null and v_current.mp_user_id = p_mp_user_id and v_current.live_mode = p_live_mode then
+  if v_current.id is not null and v_current.mp_user_id = p_mp_user_id then
     -- Reconectar la misma cuenta: tokens nuevos.
     v_id := v_current.id;
     update public.payment_accounts
        set status = 'connected', mp_nickname = left(p_nickname, 100), token_expires_at = p_expires_at,
-           last_refreshed_at = now(), last_error = null, connected_by = auth.uid(), connected_at = now()
+           live_mode = p_live_mode, last_refreshed_at = now(), last_error = null,
+           connected_by = auth.uid(), connected_at = now()
      where id = v_id;
   else
     if v_current.id is not null then
@@ -287,11 +288,12 @@ grant execute on function public.get_payments_status(uuid) to authenticated;
 -- ---------------------------------------------------------------------
 -- Servidor (service_role): leer y rotar tokens. Nadie más puede ejecutarlas.
 -- ---------------------------------------------------------------------
-create or replace function public.svc_mp_account_by_user(p_mp_user_id bigint, p_live_mode boolean)
+-- Avisos: la cuenta del estudio por el usuario de Mercado Pago (user_id del aviso).
+create or replace function public.svc_mp_account_by_user(p_mp_user_id bigint)
 returns table (account_id uuid, tenant_id uuid, status public.payment_account_status)
 language sql stable security definer set search_path = '' as $$
   select a.id, a.tenant_id, a.status from public.payment_accounts a
-  where a.mp_user_id = p_mp_user_id and a.live_mode = p_live_mode and a.status <> 'disconnected'
+  where a.mp_user_id = p_mp_user_id and a.status <> 'disconnected'
 $$;
 
 create or replace function public.svc_mp_account_of_tenant(p_tenant uuid)
@@ -380,7 +382,7 @@ declare
   f text;
 begin
   foreach f in array array[
-    'public.svc_mp_account_by_user(bigint, boolean)',
+    'public.svc_mp_account_by_user(bigint)',
     'public.svc_mp_account_of_tenant(uuid)',
     'public.svc_mp_credentials(uuid)',
     'public.svc_mp_begin_refresh(uuid)',

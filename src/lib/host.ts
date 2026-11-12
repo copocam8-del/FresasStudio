@@ -78,6 +78,17 @@ export function classifyHost(rawHost: string | null | undefined, rawRoot: string
 /** Prefijos internos de rutas: solo se llega a ellos por rewrite del proxy. */
 export const INTERNAL_PREFIXES = ["/sites", "/platform"] as const;
 
+/**
+ * Rutas de la plataforma que responden igual en cualquier host (sin reescribir):
+ * webhooks de Mercado Pago, vuelta de OAuth y tareas internas. Mercado Pago llama
+ * siempre a una sola URL fija (cleo.com.ar, o el túnel en desarrollo).
+ */
+export const PLATFORM_API_PREFIX = "/api/pagos/";
+
+export function isPlatformApiPath(pathname: string): boolean {
+  return pathname.startsWith(PLATFORM_API_PREFIX);
+}
+
 export function isInternalPath(pathname: string): boolean {
   return INTERNAL_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
@@ -88,6 +99,7 @@ export function isInternalPath(pathname: string): boolean {
  */
 export function rewritePath(kind: HostKind, pathname: string): string | null {
   if (isInternalPath(pathname)) return null;
+  if (isPlatformApiPath(pathname)) return pathname;
   const path = pathname === "/" ? "" : pathname;
   switch (kind.kind) {
     case "root":
