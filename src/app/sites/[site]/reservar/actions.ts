@@ -4,7 +4,9 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { parseInstant, parseProChoice } from "@/lib/booking-format";
 import { userFacingDbError } from "@/lib/db-errors";
-import { currentStudio } from "@/lib/request";
+import { paymentsConfig } from "@/lib/payments/config";
+import { createDepositCheckout } from "@/lib/payments/flows";
+import { currentOrigin, currentStudio } from "@/lib/request";
 import { serverSupabase } from "@/lib/supabase/server";
 import { phoneSchema } from "@/lib/validation";
 
@@ -55,6 +57,23 @@ export async function releaseBookingAction(formData: FormData): Promise<void> {
   const { error } = await supabase.rpc("release_my_pending_booking", { p_slug: studio.slug, p_code: code.data });
   if (error) console.error("release_my_pending_booking", userFacingDbError(error));
   redirect(`/reserva/${code.data.toUpperCase()}`);
+}
+
+export type PayState = { error?: string } | undefined;
+
+/**
+ * "Pagar seña con Mercado Pago": crea (o reutiliza) el link de Checkout Pro en la
+ * cuenta del estudio y manda a la clienta a pagar. El monto lo pone la base. Volver
+ * de Mercado Pago NO confirma nada: lo confirma el aviso verificado contra su API.
+ */
+export async function payDepositAction(_prev: PayState, formData: FormData): Promise<PayState> {
+  const studio = await currentStudio();
+  const code = codeSchema.safeParse(formData.get("code"));
+  if (!studio || !code.success) return { error: "No encontramos tu reserva." };
+  if (!paymentsConfig()) return { error: "El pago online no está disponible en este momento. Escribile al estudio." };
+  const result = await createDepositCheckout(studio.slug, code.data, await currentOrigin());
+  if ("error" in result) return { error: result.error };
+  redirect(result.url);
 }
 
 /**
