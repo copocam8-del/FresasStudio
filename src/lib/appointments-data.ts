@@ -13,6 +13,7 @@ export type Appointment = {
   code: string;
   client_profile_id: string;
   professional_id: string;
+  service_id: string;
   service_name: string;
   professional_name: string;
   starts_at: string;
@@ -26,13 +27,24 @@ export type Appointment = {
   deposit_minor: number;
   policy_version: number;
   cancellation_window_hours: number;
-  status: "pending_payment" | "confirmed" | "cancelled" | "expired";
-  deposit_status: "pending" | "paid" | "paid_offline";
+  status: "pending_payment" | "confirmed" | "cancelled" | "expired" | "rescheduled" | "completed" | "no_show";
+  deposit_status: "pending" | "paid" | "paid_offline" | "credit" | "transferred";
   hold_expires_at: string | null;
   source: "online" | "staff";
   forced_outside_hours: boolean;
   client_note: string | null;
   created_at: string;
+  credit_applied_minor: number;
+  rescheduled_from: string | null;
+  reschedule_count: number;
+  checked_in_at: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+  cancelled_by: "client" | "studio" | null;
+  cancel_reason: string | null;
+  deposit_outcome: "applied" | "credited" | "forfeited" | "refunded" | "transferred" | null;
+  deposit_outcome_minor: number | null;
+  closed_at: string | null;
 };
 
 export type AppointmentEvent = {
@@ -63,6 +75,22 @@ export async function loadDay(ctx: StaffContext, ymd: string) {
     .eq("tenant_id", ctx.tenantId)
     .gte("starts_at", from)
     .lt("starts_at", to)
+    .order("starts_at");
+  if (error) throw new Error(`No se pudieron cargar los turnos: ${error.message}`);
+  const appointments = (data ?? []) as Appointment[];
+  return { appointments, clients: await loadClients(ctx, appointments.map((a) => a.client_profile_id)) };
+}
+
+/** Turnos confirmados que ya terminaron y nadie marcó (llegó/terminó/faltó), de los últimos 60 días. */
+export async function loadUnclosed(ctx: StaffContext) {
+  const supabase = await serverSupabase();
+  const { data, error } = await supabase
+    .from("appointments")
+    .select("*")
+    .eq("tenant_id", ctx.tenantId)
+    .eq("status", "confirmed")
+    .lt("ends_at", new Date().toISOString())
+    .gt("starts_at", new Date(Date.now() - 60 * 86_400_000).toISOString())
     .order("starts_at");
   if (error) throw new Error(`No se pudieron cargar los turnos: ${error.message}`);
   const appointments = (data ?? []) as Appointment[];

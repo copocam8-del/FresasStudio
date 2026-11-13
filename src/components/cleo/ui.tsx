@@ -65,9 +65,9 @@ export function StatusPill({ status, children, className }: { status: Status; ch
 
 /** Estado de una reserva → tono de pastilla. */
 export function appointmentTone(status: string): Status {
-  if (status === "confirmed") return "ok";
+  if (status === "confirmed" || status === "completed") return "ok";
   if (status === "pending_payment") return "pending";
-  if (status === "cancelled" || status === "expired") return "cancel";
+  if (status === "cancelled" || status === "expired" || status === "no_show") return "cancel";
   return "neutral";
 }
 

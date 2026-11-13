@@ -24,7 +24,7 @@ export default async function PanelLayout({ children, params }: LayoutProps<"/si
 
   const links: (NavItem & { show: boolean })[] = [
     { href: "/admin", label: "Inicio", icon: "home", show: true },
-    { href: "/admin/turnos", label: "Turnos", icon: "calendar", show: can(ctx, "agenda.read_all") || can(ctx, "agenda.read_own") },
+    { href: "/admin/agenda", label: "Agenda", icon: "calendar", show: can(ctx, "agenda.read_all") || can(ctx, "agenda.read_own") },
     { href: "/admin/servicios", label: "Servicios", icon: "scissors", show: true },
     { href: "/admin/profesionales", label: "Profesionales", icon: "users", show: true },
     { href: "/admin/horarios", label: "Horarios", icon: "clock", show: true },

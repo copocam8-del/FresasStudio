@@ -6,7 +6,7 @@ import { appointmentTone, InitialsAvatar, PageTitle, StatCard, StatusPill } from
 import { EmptyState } from "@/components/panel/panel-ui";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { DEPOSIT_LABEL, STATUS_LABEL } from "@/lib/appointment-labels";
-import { effectiveStatus, loadDay } from "@/lib/appointments-data";
+import { effectiveStatus, loadDay, loadUnclosed } from "@/lib/appointments-data";
 import { can, requireStaff } from "@/lib/auth";
 import { addDays, formatDayShort, formatTime, isYmd, ymdIn } from "@/lib/booking-format";
 import { formatMoney } from "@/lib/money";
@@ -17,6 +17,8 @@ const FILTERS = [
   { key: "todos", label: "Todos" },
   { key: "confirmados", label: "Confirmados" },
   { key: "pendientes", label: "Pendientes" },
+  { key: "sin-cerrar", label: "Sin cerrar" },
+  { key: "faltas", label: "Faltas" },
   { key: "cancelados", label: "Cancelados" },
 ] as const;
 
@@ -31,20 +33,24 @@ export default async function TurnosPage({ params, searchParams }: PageProps<"/s
   const today = ymdIn(new Date(), tz);
   const day = isYmd(sp.dia) ? sp.dia : today;
   const filter = FILTERS.find((f) => f.key === sp.estado)?.key ?? "todos";
-  const { appointments, clients } = await loadDay(ctx, day);
+  // «Sin cerrar» junta los turnos pasados sin marcar de todos los días (C12).
+  const { appointments, clients } = filter === "sin-cerrar" ? await loadUnclosed(ctx) : await loadDay(ctx, day);
+  const nowMs = new Date().getTime();
 
   const rows = appointments.map((a) => ({ a, st: effectiveStatus(a) }));
   const counts = {
     total: rows.filter((r) => r.st !== "cancelled" && r.st !== "expired").length,
     confirmed: rows.filter((r) => r.st === "confirmed").length,
     pending: rows.filter((r) => r.st === "pending_payment").length,
-    cancelled: rows.filter((r) => r.st === "cancelled" || r.st === "expired").length,
+    cancelled: rows.filter((r) => r.st === "cancelled" || r.st === "expired" || r.st === "rescheduled").length,
   };
-  const visible = rows.filter(({ st }) =>
+  const visible = rows.filter(({ a, st }) =>
     filter === "todos" ? true
       : filter === "confirmados" ? st === "confirmed"
       : filter === "pendientes" ? st === "pending_payment"
-      : st === "cancelled" || st === "expired");
+      : filter === "sin-cerrar" ? st === "confirmed" && new Date(a.ends_at).getTime() < nowMs
+      : filter === "faltas" ? st === "no_show"
+      : st === "cancelled" || st === "expired" || st === "rescheduled");
   // D5: solo números reales y mayores que cero.
   const stats = [
     { icon: CalendarDays, value: counts.total, label: "Turnos del día" },
@@ -59,7 +65,7 @@ export default async function TurnosPage({ params, searchParams }: PageProps<"/s
   return (
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <PageTitle title="Turnos" description={own ? "Tus turnos del día." : "Gestioná todos los turnos de tu estudio"} />
+        <PageTitle title="Turnos" description={filter === "sin-cerrar" ? "Turnos que ya pasaron y nadie marcó: indicá si vino o si faltó." : own ? "Tus turnos del día." : "Gestioná todos los turnos de tu estudio"} />
         {can(ctx, "agenda.manage") && (
           <Link href="/admin/turnos/nuevo" className={buttonVariants({ className: "gap-2 px-5" })}>
             <Plus aria-hidden strokeWidth={1.8} className="size-5" /> Nuevo turno
@@ -104,7 +110,7 @@ export default async function TurnosPage({ params, searchParams }: PageProps<"/s
       </div>
 
       <section aria-labelledby="dia" className="glass flex flex-col gap-1 rounded-[1.1rem] p-3 sm:p-4">
-        <h2 id="dia" className="px-2 pt-1 pb-2 text-[1.05rem] font-normal text-foreground first-letter:uppercase">{formatDayShort(day)}</h2>
+        <h2 id="dia" className="px-2 pt-1 pb-2 text-[1.05rem] font-normal text-foreground first-letter:uppercase">{filter === "sin-cerrar" ? "Últimos 60 días" : formatDayShort(day)}</h2>
         {visible.length === 0 ? (
           <EmptyState>{appointments.length === 0 ? "No hay turnos este día." : "No hay turnos con ese estado."}</EmptyState>
         ) : (
@@ -125,11 +131,11 @@ export default async function TurnosPage({ params, searchParams }: PageProps<"/s
                 {visible.map(({ a, st }) => {
                   const name = clients.get(a.client_profile_id)?.full_name ?? "Clienta";
                   return (
-                    <tr key={a.id} className={st === "cancelled" || st === "expired" ? "opacity-70" : ""}>
+                    <tr key={a.id} className={st === "cancelled" || st === "expired" || st === "rescheduled" ? "opacity-70" : ""}>
                       <td className="px-4 py-3"><span className="flex items-center gap-3"><InitialsAvatar name={name} />{name}</span></td>
                       <td className="px-4 py-3">{a.service_name}</td>
                       <td className="px-4 py-3">{a.professional_name}</td>
-                      <td className="px-4 py-3 tabular-nums">{formatTime(a.starts_at, tz)} – {formatTime(a.ends_at, tz)} hs</td>
+                      <td className="px-4 py-3 tabular-nums">{filter === "sin-cerrar" ? `${formatDayShort(ymdIn(a.starts_at, tz))} · ` : ""}{formatTime(a.starts_at, tz)} – {formatTime(a.ends_at, tz)} hs</td>
                       <td className="px-4 py-3">
                         <span className="flex flex-wrap gap-1">
                           <StatusPill status={appointmentTone(st)}>{STATUS_LABEL[st]}</StatusPill>
@@ -155,9 +161,9 @@ export default async function TurnosPage({ params, searchParams }: PageProps<"/s
                 return (
                   <li key={a.id}>
                     <Link href={`/admin/turnos/${a.id}`}
-                      className={`flex min-h-[3.6rem] items-center gap-3 rounded-[0.8rem] border border-[#2b2321] bg-[#181413]/85 px-2.5 py-2 hover:bg-[#221b1a] ${st === "cancelled" || st === "expired" ? "opacity-70" : ""}`}>
+                      className={`flex min-h-[3.6rem] items-center gap-3 rounded-[0.8rem] border border-[#2b2321] bg-[#181413]/85 px-2.5 py-2 hover:bg-[#221b1a] ${st === "cancelled" || st === "expired" || st === "rescheduled" ? "opacity-70" : ""}`}>
                       <span className="flex min-w-[4.1rem] shrink-0 items-center justify-center rounded-[0.65rem] border border-[#3a302d] bg-[#120e0e] px-2 py-2 text-[0.9rem] tabular-nums">
-                        {formatTime(a.starts_at, tz)}
+                        {filter === "sin-cerrar" ? `${formatDayShort(ymdIn(a.starts_at, tz))} ` : ""}{formatTime(a.starts_at, tz)}
                       </span>
                       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                         <span className="truncate text-[0.95rem]">{name}</span>

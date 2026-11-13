@@ -12,14 +12,19 @@ export function BlockForm({
   professionalId,
   professionals,
   today,
+  initialDate,
+  initialProfessionalId,
 }: {
   professionalId?: string;
   professionals?: { id: string; display_name: string }[];
   today: string;
+  /** Precarga desde la agenda («Bloquear» un día). */
+  initialDate?: string;
+  initialProfessionalId?: string;
 }) {
   const [state, action] = useActionState<BlockState, FormData>(createBlockAction, undefined);
   const [allDay, setAllDay] = useState(true);
-  const [from, setFrom] = useState(today);
+  const [from, setFrom] = useState(initialDate ?? today);
 
   return (
     <form action={action} className="flex flex-col gap-4" key={state?.savedAt ?? "form"}>
@@ -27,7 +32,7 @@ export function BlockForm({
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="kind">Tipo</Label>
-        <select id="kind" name="kind" defaultValue={professionalId ? "day_off" : "holiday"} className="h-11 rounded-xl border border-input/80 bg-[#141010]/80 px-3 text-base">
+        <select id="kind" name="kind" defaultValue={professionalId || initialProfessionalId ? "day_off" : "holiday"} className="h-11 rounded-xl border border-input/80 bg-[#141010]/80 px-3 text-base">
           {BLOCK_KINDS.map((k) => (
             <option key={k.value} value={k.value}>
               {k.label}
@@ -39,7 +44,7 @@ export function BlockForm({
       {!professionalId && professionals && (
         <div className="flex flex-col gap-2">
           <Label htmlFor="professional_id">¿A quién afecta?</Label>
-          <select id="professional_id" name="professional_id" defaultValue="" className="h-11 rounded-xl border border-input/80 bg-[#141010]/80 px-3 text-base">
+          <select id="professional_id" name="professional_id" defaultValue={initialProfessionalId ?? ""} className="h-11 rounded-xl border border-input/80 bg-[#141010]/80 px-3 text-base">
             <option value="">Todo el estudio</option>
             {professionals.map((p) => (
               <option key={p.id} value={p.id}>
@@ -57,7 +62,7 @@ export function BlockForm({
 
       <div className="grid grid-cols-2 gap-3">
         <Field label="Desde" name="from_date" type="date" required value={from} onChange={(e) => setFrom(e.target.value)} />
-        <Field label="Hasta" name="to_date" type="date" required defaultValue={today} min={from} />
+        <Field label="Hasta" name="to_date" type="date" required defaultValue={initialDate ?? today} min={from} />
         {!allDay && (
           <>
             <Field label="Desde las" name="from_time" type="time" step={300} required defaultValue="13:00" />
