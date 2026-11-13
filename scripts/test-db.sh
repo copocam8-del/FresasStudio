@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Levanta un PostgreSQL temporal, aplica migraciones + seed y corre los tests.
 # Uso: ./scripts/test-db.sh
+#      ONLY="20 21" ./scripts/test-db.sh   → solo esos archivos de tests (por prefijo), sin concurrencia
 # Requiere PostgreSQL 15+ instalado localmente (initdb, pg_ctl, psql).
 #
 # Funciona en Linux y en Windows (Git Bash). En Windows usa la instalación oficial
@@ -73,9 +74,16 @@ echo "→ Seed de desarrollo"
 "${PSQL[@]}" -d fresas_test -f "$ROOT/supabase/seed.sql" >/dev/null
 
 for f in "$ROOT"/db/tests/*.sql; do
+  if [ -n "${ONLY:-}" ]; then
+    match=0
+    for p in $ONLY; do case "$(basename "$f")" in "$p"*) match=1 ;; esac; done
+    [ "$match" = 1 ] || continue
+  fi
   echo "→ Tests $(basename "$f")"
   "${PSQL[@]}" -d fresas_test -f "$f"
 done
+
+[ -n "${ONLY:-}" ] && exit 0
 
 # Concurrencia: necesita datos comprometidos, así que corre sobre una copia propia.
 echo "→ Tests de concurrencia (db/tests/concurrency)"
