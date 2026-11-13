@@ -68,7 +68,8 @@ select tests.throws($$insert into public.client_profiles (tenant_id, full_name) 
 select tests.ok((select count(*) = 3 from public.client_profiles), 'dueña A: ve las 3 fichas de Fresas');
 select tests.ok((select count(*) = 0 from public.client_profiles where tenant_id = :B), 'dueña A: no ve fichas de B');
 :as_pro_a
-select tests.ok((select count(*) = 3 from public.client_profiles), 'profesional A (clients.read): ve las fichas de Fresas');
+-- Sprint 6 (C19): la profesional ve solo las clientas con turnos con ella (acá, ninguna).
+select tests.ok((select count(*) = 0 from public.client_profiles), 'profesional A (clients.read_own): no ve fichas de clientas que no atendió');
 select tests.ok((select tests.affected($$update public.client_profiles set phone = '1234567'$$)) = 0,
                 'profesional A (sin clients.manage): no puede editarlas');
 :as_owner_b
