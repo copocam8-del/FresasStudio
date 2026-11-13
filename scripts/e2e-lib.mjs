@@ -26,7 +26,7 @@ export async function req(host, path, { method = "GET", body, cookies = {} } = {
     headers.origin = `http://${host}`;
   }
   return new Promise((resolve, reject) => {
-    const rq = http.request({ host: "localhost", port: 3000, path, method, headers }, (res) => {
+    const rq = http.request({ host: "localhost", port: Number(process.env.E2E_PORT ?? 3000), path, method, headers }, (res) => {
       let html = ""; res.setEncoding("utf8");
       res.on("data", (d) => (html += d));
       res.on("end", () => {

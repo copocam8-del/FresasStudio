@@ -85,7 +85,7 @@ r = await req(F, `/reserva/${code}`, { cookies: c1 });
 ok(r.html.includes("Simular pago aprobado (solo desarrollo)"), "desarrollo: aparece el pago simulado");
 r = await req(F, `/reserva/${code}`, { method: "POST", body: formFields(r.html, "Simular pago aprobado"), cookies: c1 });
 r = await req(F, `/reserva/${code}`, { cookies: c1 });
-ok(r.html.includes("Reserva confirmada"), "pago verificado (simulado) → reserva confirmada");
+ok(r.html.includes("Turno confirmado"), "pago verificado (simulado) → reserva confirmada");
 
 // ---------------------------------------------------------------------
 // Carrera: 10 clientas confirman el MISMO horario a la vez contra la app real

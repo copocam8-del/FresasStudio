@@ -5,6 +5,9 @@
 // `next start` con las variables del simulado) y SUPABASE_SECRET_KEY en .env.local.
 // Uso: node scripts/e2e-payments.mjs
 import { spawn } from "node:child_process";
+
+/** Puerto donde escucha la app (el host que se manda sigue siendo localhost:3000). */
+const APP_PORT = Number(process.env.E2E_PORT ?? 3000);
 import { createHmac, randomUUID } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { done, F, FRESAS_ID, formFields, login, ok, req, supabaseAs } from "./e2e-lib.mjs";
@@ -34,7 +37,7 @@ if (!existsSync(".next/BUILD_ID")) {
 // Mercado Pago simulado + app con sus variables
 // ---------------------------------------------------------------------
 const { server: fake } = await startFakeMercadoPago();
-const app = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "-p", "3000"], {
+const app = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "-p", String(APP_PORT)], {
   env: {
     ...process.env,
     MP_CLIENT_ID: CLIENT_ID,
@@ -54,7 +57,7 @@ app.stderr.on("data", (d) => (appLog += d));
 const finish = () => { app.kill(); fake.close(); done(); };
 for (let i = 0; i < 60; i++) {
   if (/Ready in|started server|Local:/.test(appLog)) break;
-  if (/EADDRINUSE/.test(appLog)) { console.error("El puerto 3000 está ocupado: detené el otro next start."); app.kill(); fake.close(); process.exit(1); }
+  if (/EADDRINUSE/.test(appLog)) { console.error(`El puerto ${APP_PORT} está ocupado: detené el otro next start (o usá E2E_PORT).`); app.kill(); fake.close(); process.exit(1); }
   await new Promise((r) => setTimeout(r, 500));
 }
 await new Promise((r) => setTimeout(r, 500));
@@ -67,7 +70,7 @@ async function webhook(paymentId, { userId = SELLER, requestId = randomUUID(), t
   const ts = String(Math.floor(Date.now() / 1000));
   const manifest = `id:${paymentId};request-id:${requestId};ts:${ts};`;
   const v1 = createHmac("sha256", badSignature ? "otra-clave" : WEBHOOK_SECRET).update(manifest).digest("hex");
-  const res = await fetch(`http://localhost:3000/api/pagos/mp/webhook?data.id=${paymentId}&type=${type}`, {
+  const res = await fetch(`http://localhost:${APP_PORT}/api/pagos/mp/webhook?data.id=${paymentId}&type=${type}`, {
     method: "POST",
     headers: { "content-type": "application/json", "x-request-id": requestId, "x-signature": `ts=${ts},v1=${v1}` },
     body: JSON.stringify({ action: "payment.updated", api_version: "v1", type, data: { id: String(paymentId) }, user_id: userId, live_mode: false }),
@@ -208,7 +211,7 @@ try {
   let b = await booking(sb2, code);
   ok(b.status === "confirmed" && b.deposit_status === "paid", "la reserva queda confirmada con la seña pagada");
   r = await req(F, `/reserva/${code}?pago=volvio`, { cookies: c2 });
-  ok(strip(r.html).includes("Confirmada") && !strip(r.html).includes("Estamos verificando"), "la pantalla de la clienta pasa a «Confirmada»");
+  ok(strip(r.html).includes("Confirmado") && !strip(r.html).includes("Estamos verificando"), "la pantalla de la clienta pasa a «Confirmado»");
 
   w = await webhook(payId, { requestId: reqId });
   ok(w.status === 200 && w.json.result === "duplicate", "el mismo aviso otra vez: duplicado, no hace nada");
@@ -238,9 +241,9 @@ try {
   const code3 = await book(sb3);
   const pref3 = (await payButton(code3, c3)).split("/checkout/")[1];
   const { id: pay3 } = await fakePost("/__pay", { preference_id: pref3 });
-  let cron = await fetch("http://localhost:3000/api/pagos/interno/revisar", { method: "POST" });
+  let cron = await fetch(`http://localhost:${APP_PORT}/api/pagos/interno/revisar`, { method: "POST" });
   ok(cron.status === 401, "revisión sin la clave: 401");
-  cron = await fetch("http://localhost:3000/api/pagos/interno/revisar", { method: "POST", headers: { authorization: `Bearer ${CRON_SECRET}` } });
+  cron = await fetch(`http://localhost:${APP_PORT}/api/pagos/interno/revisar`, { method: "POST", headers: { authorization: `Bearer ${CRON_SECRET}` } });
   const rep = await cron.json();
   ok(cron.status === 200 && rep.synced >= 1, `revisión: consulta los links abiertos (${rep.checked} revisados)`);
   ok((await booking(sb3, code3)).status === "confirmed", "sin webhook, la revisión confirma la reserva");
