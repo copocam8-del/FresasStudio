@@ -54,3 +54,33 @@ begin
   returning id into v_id;
   return v_id;
 end $$;
+
+-- Mercado Pago de Fresas conectado (cuenta 777), para pagar señas "verificadas".
+insert into public.payment_accounts (id, tenant_id, mp_user_id, site_id, live_mode, token_expires_at)
+values ('40000000-0000-4000-a000-00000000006a', :A, 777, 'MLA', false, now() + interval '180 days');
+\set ACC '''40000000-0000-4000-a000-00000000006a'''
+
+-- Link de pago por lo que falta pagar de la seña (como start_deposit_checkout)
+create function tests.intent6(p_appt uuid) returns uuid language sql as $$
+  insert into public.payment_intents (tenant_id, appointment_id, account_id, amount_minor, currency, expires_at)
+  select tenant_id, id, '40000000-0000-4000-a000-00000000006a', deposit_minor - credit_applied_minor, currency,
+         coalesce(hold_expires_at, now())
+  from public.appointments where id = p_appt
+  returning id
+$$;
+
+-- Pago aprobado verificado (lo que manda el servidor después de consultar la API)
+create function tests.mp6(p_id text, p_ref uuid, p_amount bigint default 750000, p_status text default 'approved',
+                          p_refunded bigint default 0)
+returns jsonb language sql as $$
+  select jsonb_build_object('provider_payment_id', p_id, 'status', p_status, 'status_detail', 'accredited',
+    'amount_minor', p_amount, 'refunded_minor', p_refunded, 'currency', 'ARS', 'external_reference', p_ref::text,
+    'collector_id', 777, 'live_mode', false, 'approved_at', now(),
+    'payment_method', 'visa', 'payment_type', 'credit_card', 'installments', 1, 'fee_minor', 30000, 'net_minor', 720000)
+$$;
+grant execute on function tests.mp6(text, uuid, bigint, text, bigint) to service_role;
+
+-- Saldo disponible de una clienta (atajo para los tests)
+create function tests.credit(p_client uuid) returns bigint language sql as $$
+  select app.credit_available('10000000-0000-4000-a000-000000000001', p_client)
+$$;

@@ -173,7 +173,8 @@ begin
   if v_row.id is null then
     raise exception 'No encontramos una reserva tuya con ese código' using errcode = 'P0002';
   end if;
-  perform app.confirm_deposit_payment(v_row.id, 'SIMULADO-' || v_row.code, v_row.deposit_minor);
+  -- Lo que falta pagar: la seña menos el saldo a favor usado (Sprint 6).
+  perform app.confirm_deposit_payment(v_row.id, 'SIMULADO-' || v_row.code, v_row.deposit_minor - v_row.credit_applied_minor);
 end $$;
 revoke execute on function public.dev_simulate_deposit_payment(text, text) from public, anon;
 grant execute on function public.dev_simulate_deposit_payment(text, text) to authenticated;
