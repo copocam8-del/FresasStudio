@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  Ban, Building2, CalendarDays, CalendarPlus, Clock, CreditCard, House, LogOut, Menu, Palette, Scissors,
+  Ban, BarChart3, Building2, CalendarDays, Contact, CalendarPlus, Clock, CreditCard, House, LogOut, Menu, Palette, Scissors,
   Settings2, Sparkles, UserRound, Users, Wallet, X, type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -14,7 +14,7 @@ import { SilkSidebar } from "@/components/cleo/silk";
 const ICONS: Record<string, LucideIcon> = {
   home: House, calendar: CalendarDays, book: CalendarPlus, user: UserRound, scissors: Scissors, users: Users,
   clock: Clock, ban: Ban, team: Building2, settings: Settings2, card: CreditCard, wallet: Wallet, palette: Palette,
-  sparkles: Sparkles,
+  sparkles: Sparkles, contact: Contact, chart: BarChart3,
 };
 export type NavItem = { href: string; label: string; icon: keyof typeof ICONS };
 
