@@ -99,7 +99,7 @@ select tests.throws(format($$select public.correct_no_show(%L, 'Profesional')$$,
 -- Política del estudio: la falta NO hace perder la seña → pasa al saldo
 :as_super
 update public.tenant_settings set no_show_forfeits_deposit = false where tenant_id = :A;
-select tests.appt6(:'cp2', now() - interval '20 minutes', 'confirmed', 24, :CARO, 30) as n_keep \gset
+select tests.appt6(:'cp2', now() - interval '80 minutes', 'confirmed', 24, :CARO, 30) as n_keep \gset
 :as_owner_a
 select tests.ok(public.mark_no_show(:'n_keep') = 'credited', 'si la política no hace perder la seña por falta, pasa al saldo');
 :as_super
@@ -110,10 +110,31 @@ select tests.throws(format($$select public.correct_no_show(%L, 'Error')$$, :'n_k
   'esa falta no se corrige a mano (el saldo ya se acreditó)', 'saldo');
 
 -- ---------------------------------------------------------------------
+-- Ocupación (migración 2770): una atendida sigue ocupando; una falta libera el hueco
+-- ---------------------------------------------------------------------
+:as_super
+update public.tenant_settings set no_show_forfeits_deposit = true where tenant_id = :A;
+select tests.appt6(:'cp1', now() + interval '2 hours', 'confirmed', 24, :SOFI, 60) as occ \gset
+:as_owner_a
+select public.mark_attendance(:'occ', 'finished');
+:as_super
+select tests.throws(format($$select tests.appt6(%L, now() + interval '2 hours 15 minutes', 'confirmed', 24, %L, 30)$$, :'cp2', :SOFI),
+  '"Terminó" antes de hora: el turno atendido sigue ocupando su horario (sin doble reserva)', 'appointments_no_overlap');
+select tests.appt6(:'cp2', now() - interval '30 minutes', 'confirmed', 24, :SOFI, 60) as ns \gset
+:as_owner_a
+select public.mark_no_show(:'ns');
+:as_super
+select tests.appt6(:'cp1', now() - interval '10 minutes', 'confirmed', 24, :SOFI, 30) as walkin \gset
+select tests.ok(:'walkin' is not null, 'una falta libera el horario: se puede atender a alguien sin turno en ese hueco');
+:as_owner_a
+select tests.throws(format($$select public.correct_no_show(%L, 'Vino tarde')$$, :'ns'),
+  'corregir esa falta cuando el hueco ya se usó: rechazado con un mensaje claro', 'ya se cargó otro turno');
+
+-- ---------------------------------------------------------------------
 -- Estados que no se marcan y aislamiento
 -- ---------------------------------------------------------------------
 :as_super
-select tests.appt6(:'cp1', now() + interval '1 hour', 'pending_payment', 24, :CARO, 30) as p1 \gset
+select tests.appt6(:'cp1', now() + interval '2 hours', 'pending_payment', 24, :CARO, 30) as p1 \gset
 select tests.appt6(:'cp1', now() - interval '6 hours', 'confirmed', 24, :CARO, 30) as other \gset
 :as_owner_a
 select tests.throws(format($$select public.mark_attendance(%L, 'checked_in')$$, :'p1'),

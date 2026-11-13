@@ -44,6 +44,20 @@ select tests.ok((select sum(amount_minor) = -750000 from public.client_credit_en
   'el libro registra el uso en esa reserva');
 
 -- ---------------------------------------------------------------------
+-- Si el estudio registra la seña como YA COBRADA, el saldo no se toca (migración 2760)
+-- ---------------------------------------------------------------------
+:as_owner_a
+select public.adjust_client_credit(:'cp2', 750000, 'Saldo que no se tiene que usar');
+select tests.book(:'cp2', 30, 'cash') as b_cash \gset
+:as_super
+select tests.ok((select status = 'confirmed' and deposit_status = 'paid_offline' and credit_applied_minor = 0
+                 from public.appointments where id = :'b_cash'),
+  'turno manual con la seña cobrada en efectivo: no usa el saldo');
+select tests.ok(tests.credit(:'cp2') = 750000, '…y el saldo de la clienta queda intacto');
+:as_owner_a
+select public.adjust_client_credit(:'cp2', -750000, 'Vuelvo a cero');
+
+-- ---------------------------------------------------------------------
 -- El saldo cubre una parte: Mercado Pago cobra la diferencia
 -- ---------------------------------------------------------------------
 :as_owner_a

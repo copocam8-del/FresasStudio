@@ -45,9 +45,9 @@ ok(r.status === 200 && page.includes("Revisá y confirmá") && page.includes("co
    "paso 4: resumen con profesional, precio total y seña");
 ok(/\$\s15\.000/.test(page) && /\$\s7\.500/.test(page) && page.includes("24 horas"), "resumen: $ 15.000, seña $ 7.500 y política de 24 h");
 
-r = await submit(F, confirmPath, "Reservar y pagar seña", { phone: "11 5000-0001", note: "" }, c1);
+r = await submit(F, confirmPath, 'name="policy_version"', { phone: "11 5000-0001", note: "" }, c1);
 ok(r.html.includes("aceptar la política"), "sin aceptar la política no se puede reservar");
-r = await submit(F, confirmPath, "Reservar y pagar seña", { phone: "11 5000-0001", accept_policy: "on", note: "Prueba e2e" }, c1);
+r = await submit(F, confirmPath, 'name="policy_version"', { phone: "11 5000-0001", accept_policy: "on", note: "Prueba e2e" }, c1);
 const code = /\/reserva\/([2-9A-HJKMNP-Z]{6})$/.exec(r.location ?? "")?.[1];
 ok(r.status === 303 && Boolean(code), `reservar: crea la reserva y va a /reserva/${code}`);
 
@@ -70,7 +70,7 @@ for (const link of dayLinks.filter((l) => !l.endsWith(firstYmd))) {
   otherSlot = [...page.html.matchAll(/href="(\/reservar\/confirmar\?[^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, "&"))[0];
   if (otherSlot) break;
 }
-r = await submit(F, otherSlot, "Reservar y pagar seña", { phone: "11 5000-0001", accept_policy: "on" }, c1);
+r = await submit(F, otherSlot, 'name="policy_version"', { phone: "11 5000-0001", accept_policy: "on" }, c1);
 ok(r.html.includes("Ya tenés una reserva esperando pago"), "B7: no puede apartar otro horario mientras tiene uno pendiente");
 
 // Lo acordado no cambia aunque cambie el precio
@@ -94,7 +94,7 @@ const raceSlot = otherSlot; // libre: el intento de B7 se rechazó y no lo ocup�
 const sessions = await Promise.all([...Array(10)].map((_, i) => clientSession(i + 1)));
 const pages = await Promise.all(sessions.map((s) => req(F, raceSlot, { cookies: s })));
 const forms = pages.map((p) => {
-  const fd = formFields(p.html, "Reservar y pagar seña");
+  const fd = formFields(p.html, 'name="policy_version"');
   fd.set("phone", "11 5000-0000"); fd.set("accept_policy", "on");
   return fd;
 });
