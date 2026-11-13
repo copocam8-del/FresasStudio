@@ -20,7 +20,6 @@ q() { "${PSQL[@]}" -d "$DB" -X -q -t -A -v ON_ERROR_STOP=1 "$@"; }
 
 A=10000000-0000-4000-a000-000000000001
 SOFI=32000000-0000-4000-a000-000000000001
-CARO=32000000-0000-4000-a000-000000000002
 SEMI=31000000-0000-4000-a000-000000000001
 OWNER=$(q -c "select id from auth.users where email = 'duena@fresasstudio.test'")
 
@@ -49,9 +48,9 @@ q -c "select pg_advisory_lock(4343); select pg_sleep(3); select pg_advisory_unlo
 referee=$!
 sleep 0.7
 for i in $(seq 1 $N); do
-  pro=$SOFI; [ $((i % 2)) = 0 ] && pro=$CARO
-  session "$TMP/b.$i" "select 'TURNO ' || status from public.create_manual_booking('$A', '$CP', null, null, '$SEMI', '$pro',
-     date_trunc('hour', now()) + interval '20 days' + make_interval(hours => $i), true, null, null);" &
+  # Siempre Sofi (seña de $ 7.500 = todo el saldo); con Caro la seña es menor y sobraría saldo.
+  session "$TMP/b.$i" "select 'TURNO ' || status from public.create_manual_booking('$A', '$CP', null, null, '$SEMI', '$SOFI',
+     date_trunc('hour', now()) + interval '20 days' + make_interval(hours => 2 * $i), true, null, null);" &
 done
 wait
 wait "$referee" 2>/dev/null
@@ -77,7 +76,7 @@ sleep 0.7
 for i in $(seq 1 10); do
   session "$TMP/d.$i" "select 'AJUSTE ' || public.adjust_client_credit('$CP', -750000, 'Carrera $i');" &
   session "$TMP/r.$i" "select 'TURNO ' || status from public.create_manual_booking('$A', '$CP', null, null, '$SEMI', '$SOFI',
-     date_trunc('hour', now()) + interval '40 days' + make_interval(hours => $i), true, null, null);" &
+     date_trunc('hour', now()) + interval '40 days' + make_interval(hours => 2 * $i), true, null, null);" &
 done
 wait
 wait "$referee" 2>/dev/null
@@ -91,6 +90,29 @@ negative=$(q -c "select count(*) from public.client_credit_entries l
                  where l.lot_id is null and l.client_profile_id = '$CP'
                    and l.amount_minor + (select coalesce(sum(e.amount_minor), 0) from public.client_credit_entries e where e.lot_id = l.id) < 0")
 check "$negative" 0 "ningún lote queda negativo"
+
+# --- 3) Cancelar y marcar falta sobre el MISMO turno, a la vez -----------------------
+PV=$(q -c "select policy_version from public.tenant_settings where tenant_id = '$A'")
+APPT=$(q -c "insert into public.appointments (tenant_id, code, client_profile_id, professional_id, service_id, starts_at,
+      ends_at, occupied_until, service_name, professional_name, duration_minutes, buffer_minutes, price_minor,
+      price_is_from, currency, deposit_percent, deposit_minor, policy_version, cancellation_window_hours, status,
+      deposit_status, source)
+    values ('$A', app.generate_booking_code(), '$CP', '$SOFI', '$SEMI', now() - interval '15 minutes', now() + interval '45 minutes',
+      now() + interval '45 minutes', 'Esmaltado semipermanente', 'Sofi', 60, 0, 1500000, false, 'ARS', 50, 750000, $PV, 24,
+      'confirmed', 'paid_offline', 'staff') returning id" | head -1)
+q -c "select pg_advisory_lock(4343); select pg_sleep(3); select pg_advisory_unlock(4343);" >/dev/null &
+referee=$!
+sleep 0.7
+for i in $(seq 1 10); do
+  session "$TMP/c.$i" "select 'CERRADO ' || outcome from public.cancel_booking('$APPT', 'client', null, null, null, 'forfeited');" &
+  session "$TMP/n.$i" "select 'CERRADO ' || public.mark_no_show('$APPT');" &
+done
+wait
+wait "$referee" 2>/dev/null
+closed=$(cat "$TMP"/c.* "$TMP"/n.* | grep -c '^CERRADO ' || true)
+check "$closed" 1 "10 cancelaciones y 10 faltas a la vez sobre el mismo turno: una sola gana"
+events=$(q -c "select count(*) from public.appointment_events where appointment_id = '$APPT' and event_type in ('cancelled', 'no_show')")
+check "$events" 1 "el historial tiene un solo cierre"
 
 if [ "$fails" -gt 0 ]; then
   echo "concurrencia del saldo: $fails fallidos"
