@@ -1,6 +1,6 @@
 import {
   AlertTriangle, Ban, Bell, CalendarCheck, CalendarDays, CalendarPlus, CircleDollarSign, Clock3, CreditCard, Hourglass,
-  RotateCcw, Wallet, type LucideIcon,
+  CalendarX2, RotateCcw, Wallet, type LucideIcon,
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -11,6 +11,7 @@ import { STATUS_LABEL } from "@/lib/appointment-labels";
 import { type Appointment, type ClientLite } from "@/lib/appointments-data";
 import { can, requireStaff } from "@/lib/auth";
 import { formatDayShort, formatTime, ymdIn } from "@/lib/booking-format";
+import { agendaAlerts } from "@/lib/agenda-data";
 import { loadDashboard, timeAgo, todayLabel } from "@/lib/dashboard-data";
 import { formatMoney } from "@/lib/money";
 import { OUTCOME_LABEL } from "@/lib/payment-labels";
@@ -28,6 +29,9 @@ const ACTIVITY: Record<string, { label: string; icon: LucideIcon }> = {
   expired: { label: "Reserva vencida sin pago", icon: Clock3 },
   deposit_refunded: { label: "Seña devuelta", icon: RotateCcw },
   payment_disputed: { label: "Contracargo de una seña", icon: AlertTriangle },
+  completed: { label: "Turno atendido", icon: CalendarCheck },
+  no_show: { label: "Faltó a un turno", icon: CalendarX2 },
+  rescheduled: { label: "Turno reprogramado", icon: RotateCcw },
 };
 
 export default async function PanelHome({ params, searchParams }: PageProps<"/sites/[site]/admin">) {
@@ -38,7 +42,7 @@ export default async function PanelHome({ params, searchParams }: PageProps<"/si
   const seesAgenda = can(ctx, "agenda.read_all") || can(ctx, "agenda.read_own");
 
   const supabase = await serverSupabase();
-  const [{ data: profile }, dash, resolve, reconnect] = await Promise.all([
+  const [{ data: profile }, dash, resolve, reconnect, alerts] = await Promise.all([
     supabase.from("profiles").select("full_name").eq("id", ctx.user.id).maybeSingle(),
     seesAgenda ? loadDashboard(ctx, q.mes) : Promise.resolve(null),
     can(ctx, "cash.read") ? paymentsToResolve(ctx) : Promise.resolve(null),
@@ -46,6 +50,7 @@ export default async function PanelHome({ params, searchParams }: PageProps<"/si
       ? supabase.rpc("get_payments_status", { p_tenant: ctx.tenantId })
           .then(({ data }) => (data as Array<{ status: string | null }> | null)?.[0]?.status === "needs_reconnect")
       : Promise.resolve(false),
+    seesAgenda ? agendaAlerts(ctx) : Promise.resolve({ unclosed: 0, no_shows_month: 0 }),
   ]);
   const name = (profile?.full_name || "").split(" ")[0] || null;
 
@@ -55,6 +60,7 @@ export default async function PanelHome({ params, searchParams }: PageProps<"/si
         { icon: CalendarDays, value: dash.stats.today, label: dash.stats.today === 1 ? "Turno hoy" : "Turnos hoy", series: dash.series.last14 },
         { icon: Hourglass, value: dash.stats.pending, label: "Esperando pago" },
         { icon: CalendarCheck, value: dash.stats.next7, label: "Confirmados, próximos 7 días", series: dash.series.next7 },
+        { icon: CalendarX2, value: alerts.no_shows_month, label: alerts.no_shows_month === 1 ? "Falta este mes" : "Faltas este mes", series: undefined },
       ].filter((s) => s.value > 0)
     : [];
   const collected = dash?.stats.collectedMonth ?? 0;
@@ -85,6 +91,12 @@ export default async function PanelHome({ params, searchParams }: PageProps<"/si
         </Alert>
       )}
 
+      {alerts.unclosed > 0 && (
+        <Alert href="/admin/turnos?estado=sin-cerrar" link="Marcar">
+          {alerts.unclosed === 1 ? "Hay 1 turno que ya pasó sin marcar si vino o faltó." : `Hay ${alerts.unclosed} turnos que ya pasaron sin marcar si vino o faltó.`}
+        </Alert>
+      )}
+
       {(stats.length > 0 || collected > 0) && (
         <section aria-label="Resumen" className="grid grid-cols-2 gap-[1.4rem] xl:grid-cols-4">
           {stats.map((s) => <StatCard key={s.label} icon={s.icon} value={String(s.value)} label={s.label} series={s.series} />)}
@@ -97,7 +109,7 @@ export default async function PanelHome({ params, searchParams }: PageProps<"/si
 
       {dash && (
         <div className="grid grid-cols-1 gap-[1.4rem] xl:grid-cols-[1.25fr_1fr_0.82fr]">
-          <GlassCard title="Turnos de hoy" icon={CalendarDays} more={{ href: "/admin/turnos", label: "Ver todos" }}>
+          <GlassCard title="Turnos de hoy" icon={CalendarDays} more={{ href: "/admin/agenda", label: "Ver agenda" }}>
             {dash.today.length > 0 ? (
               <AppointmentList items={dash.today} clients={dash.clients} time={(a) => ({ time: formatTime(a.starts_at, tz) })} />
             ) : (

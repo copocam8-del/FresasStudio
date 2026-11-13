@@ -18,6 +18,7 @@ const schema = z.object({
   booking_hold_minutes: int(5, 1440, "El tiempo para pagar tiene que ser de 5 minutos a 24 horas."),
   deposit_percent: int(1, 100, "La seña tiene que ser de 1 a 100%: toda reserva lleva seña."),
   cancellation_window_hours: int(0, 720, "La ventana de cancelación tiene que ser de 0 a 720 horas."),
+  credit_expiry_days: int(30, 365, "El saldo a favor tiene que vencer entre 30 y 365 días."),
 });
 
 /** Reglas de reservas del estudio (settings.manage). La base vuelve a validar todo. */

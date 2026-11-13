@@ -15,6 +15,7 @@ export type BookingSettings = {
   booking_hold_minutes: number;
   deposit_percent: number;
   cancellation_window_hours: number;
+  credit_expiry_days: number;
 };
 
 const select = "h-11 w-full rounded-xl border border-input/80 bg-[#141010]/80 px-3 text-base text-foreground";
@@ -76,9 +77,12 @@ export function BookingSettingsForm({ s }: { s: BookingSettings }) {
           defaultValue={s.deposit_percent} required hint="Toda reserva lleva seña. Cada servicio puede tener la suya." />
         <Field label="Ventana de cancelación (horas)" name="cancellation_window_hours" type="number" inputMode="numeric" min={0} max={720}
           defaultValue={s.cancellation_window_hours} required
-          hint="Con esta anticipación o más, la seña se conserva; con menos, se pierde." />
+          hint="Con esta anticipación o más, la seña pasa al saldo a favor; con menos, se pierde." />
+        <Field label="El saldo a favor vence a los (días)" name="credit_expiry_days" type="number" inputMode="numeric" min={30} max={365}
+          defaultValue={s.credit_expiry_days} required
+          hint="De 30 a 365 días. La clienta ve en «Mis turnos» cuánto le queda y hasta cuándo." />
         <p className="text-sm text-muted-foreground">
-          Cambiar la seña o la ventana crea una versión nueva de la política. Las reservas ya hechas conservan la que aceptaron.
+          Cambiar la seña, la ventana o el vencimiento del saldo crea una versión nueva de la política. Las reservas ya hechas conservan la que aceptaron.
         </p>
       </fieldset>
 

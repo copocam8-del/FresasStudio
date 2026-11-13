@@ -19,6 +19,8 @@ const CONSTRAINTS: Record<string, string> = {
   settings_horizon_range: "Se puede reservar de 1 a 365 días adelante.",
   settings_slot_interval: "El intervalo de horarios tiene que ser de 5, 10, 15, 20, 30 o 60 minutos.",
   settings_window_range: "La ventana de cancelación tiene que ser de 0 a 720 horas.",
+  settings_credit_expiry: "El saldo a favor tiene que vencer entre 30 y 365 días.",
+  client_profiles_tenant_email: "Ya hay una clienta con ese email.",
   professionals_name: "El nombre tiene que tener entre 2 y 60 caracteres.",
   professionals_one_per_membership: "Esa cuenta ya está vinculada a otra profesional.",
   professional_services_unique: "Esa profesional ya hace ese servicio.",

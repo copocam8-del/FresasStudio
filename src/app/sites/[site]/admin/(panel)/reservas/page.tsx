@@ -12,7 +12,7 @@ export default async function BookingSettingsPage({ params }: PageProps<"/sites/
   const supabase = await serverSupabase();
   const { data, error } = await supabase
     .from("tenant_settings")
-    .select("online_booking_enabled, payments_connected, booking_min_notice_minutes, booking_horizon_days, slot_interval_minutes, booking_hold_minutes, deposit_percent, cancellation_window_hours")
+    .select("online_booking_enabled, payments_connected, booking_min_notice_minutes, booking_horizon_days, slot_interval_minutes, booking_hold_minutes, deposit_percent, cancellation_window_hours, credit_expiry_days")
     .eq("tenant_id", ctx.tenantId)
     .single();
   if (error) throw new Error(`No se pudo cargar la configuración: ${error.message}`);

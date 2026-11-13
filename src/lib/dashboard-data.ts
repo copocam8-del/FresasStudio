@@ -56,7 +56,7 @@ export async function loadDashboard(ctx: StaffContext, monthParam?: unknown): Pr
     .from("appointments")
     .select("*")
     .eq("tenant_id", ctx.tenantId)
-    .in("status", ["pending_payment", "confirmed"])
+    .in("status", ["pending_payment", "confirmed", "completed", "no_show"])
     .gte("starts_at", from)
     .lt("starts_at", to)
     .order("starts_at")
