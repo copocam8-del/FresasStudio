@@ -51,6 +51,26 @@ begin
   return new;
 end $$;
 
+-- Contexto público de reservas (redefinido): suma el vencimiento del saldo a favor
+create or replace function public.get_booking_context(p_slug text) returns jsonb
+language sql stable security definer set search_path = '' as $$
+  select jsonb_build_object(
+    'online_booking_enabled', s.online_booking_enabled,
+    'timezone', t.timezone,
+    'currency', t.currency,
+    'deposit_percent', s.deposit_percent,
+    'cancellation_window_hours', s.cancellation_window_hours,
+    'booking_hold_minutes', s.booking_hold_minutes,
+    'booking_min_notice_minutes', s.booking_min_notice_minutes,
+    'booking_horizon_days', s.booking_horizon_days,
+    'slot_interval_minutes', s.slot_interval_minutes,
+    'policy_version', s.policy_version,
+    'policy_text', s.policy_text,
+    'credit_expiry_days', s.credit_expiry_days)
+  from public.tenants t join public.tenant_settings s on s.tenant_id = t.id
+  where t.slug = lower(btrim(p_slug)) and t.status in ('trial', 'active', 'past_due')
+$$;
+
 -- ---------------------------------------------------------------------
 -- Permiso nuevo: ajustar el saldo a mano (C11). Dueña y encargada.
 -- ---------------------------------------------------------------------
@@ -863,14 +883,15 @@ create or replace function app.booking_terms(p_appointment uuid)
 returns table (
   status public.appointment_status, starts_at timestamptz, deadline timestamptz, keeps_deposit boolean,
   deposit_minor bigint, amount_minor bigint, currency text, cancellation_window_hours smallint,
-  can_cancel boolean, can_reschedule_online boolean, reschedule_count smallint
+  can_cancel boolean, can_reschedule_online boolean, reschedule_count smallint,
+  service_id uuid, professional_id uuid
 )
 language sql stable security definer set search_path = '' as $$
   select a.status, a.starts_at, t.deadline, t.keeps_deposit, t.deposit_minor, t.amount_minor, a.currency::text,
          a.cancellation_window_hours,
          a.status = 'confirmed' and a.starts_at > now(),
          a.status = 'confirmed' and a.starts_at > now() and a.reschedule_count < 1,
-         a.reschedule_count
+         a.reschedule_count, a.service_id, a.professional_id
   from public.appointments a, app.deposit_terms(a.id, now()) t
   where a.id = p_appointment
 $$;
@@ -892,7 +913,8 @@ create or replace function public.get_my_booking_terms(p_slug text, p_code text)
 returns table (
   status public.appointment_status, starts_at timestamptz, deadline timestamptz, keeps_deposit boolean,
   deposit_minor bigint, amount_minor bigint, currency text, cancellation_window_hours smallint,
-  can_cancel boolean, can_reschedule_online boolean, reschedule_count smallint
+  can_cancel boolean, can_reschedule_online boolean, reschedule_count smallint,
+  service_id uuid, professional_id uuid
 )
 language plpgsql stable security definer set search_path = '' as $$
 declare
@@ -930,7 +952,8 @@ create or replace function public.get_booking_terms(p_appointment uuid)
 returns table (
   status public.appointment_status, starts_at timestamptz, deadline timestamptz, keeps_deposit boolean,
   deposit_minor bigint, amount_minor bigint, currency text, cancellation_window_hours smallint,
-  can_cancel boolean, can_reschedule_online boolean, reschedule_count smallint
+  can_cancel boolean, can_reschedule_online boolean, reschedule_count smallint,
+  service_id uuid, professional_id uuid
 )
 language plpgsql stable security definer set search_path = '' as $$
 declare

@@ -91,3 +91,46 @@ export async function simulatePaymentAction(formData: FormData): Promise<void> {
   if (error) console.error("dev_simulate_deposit_payment", error.message);
   redirect(`/reserva/${code.data.toUpperCase()}`);
 }
+
+export type TermsState = { error?: string } | undefined;
+
+const cancelExpectedSchema = z.enum(["credited", "forfeited"]);
+const rescheduleExpectedSchema = z.enum(["transferred", "forfeited"]);
+
+/**
+ * La clienta cancela un turno confirmado. Manda la consecuencia que VIO; la base la
+ * recalcula (regla de 24 h en la hora del estudio) y, si cambió, no hace nada.
+ */
+export async function cancelMyBookingAction(_prev: TermsState, formData: FormData): Promise<TermsState> {
+  const studio = await currentStudio();
+  const code = codeSchema.safeParse(formData.get("code"));
+  const expected = cancelExpectedSchema.safeParse(formData.get("expected"));
+  if (!studio || !code.success || !expected.success) return { error: "No encontramos tu reserva." };
+  const supabase = await serverSupabase();
+  const { error } = await supabase.rpc("cancel_my_booking", {
+    p_slug: studio.slug, p_code: code.data, p_expected: expected.data,
+  });
+  if (error) return { error: userFacingDbError(error) };
+  redirect(`/reserva/${code.data.toUpperCase()}`);
+}
+
+/** La clienta cambia el día u horario (mismo servicio). La base decide la seña. */
+export async function rescheduleMyBookingAction(_prev: TermsState, formData: FormData): Promise<TermsState> {
+  const studio = await currentStudio();
+  const code = codeSchema.safeParse(formData.get("code"));
+  const pro = z.uuid().safeParse(formData.get("pro"));
+  const startsAt = parseInstant(formData.get("starts_at"));
+  const expected = rescheduleExpectedSchema.safeParse(formData.get("expected"));
+  if (!studio || !code.success || !pro.success || !startsAt || !expected.success) {
+    return { error: "El cambio no es válido. Volvé a elegir el horario." };
+  }
+  const supabase = await serverSupabase();
+  const { data, error } = await supabase.rpc("reschedule_my_booking", {
+    p_slug: studio.slug, p_code: code.data, p_professional: pro.data,
+    p_starts_at: startsAt.toISOString(), p_expected: expected.data,
+  });
+  if (error) return { error: userFacingDbError(error) };
+  const newCode = (data as { code: string }[])[0]?.code;
+  if (!newCode) return { error: "No pudimos cambiar el turno. Probá de nuevo." };
+  redirect(`/reserva/${newCode}`);
+}

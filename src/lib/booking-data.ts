@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { publicSupabase } from "@/lib/supabase/public";
 import { serverSupabase } from "@/lib/supabase/server";
+import type { BookingTerms } from "@/lib/booking-terms";
 
 /**
  * Lecturas del flujo de reserva. Toda la disponibilidad y los montos salen de la base
@@ -20,6 +21,7 @@ export type BookingContext = {
   slot_interval_minutes: number;
   policy_version: number;
   policy_text: string | null;
+  credit_expiry_days: number;
 };
 
 export type ServiceOption = {
@@ -49,8 +51,8 @@ export type MyBooking = {
   starts_at: string;
   ends_at: string;
   duration_minutes: number;
-  status: "pending_payment" | "confirmed" | "cancelled" | "expired";
-  deposit_status: "pending" | "paid" | "paid_offline";
+  status: "pending_payment" | "confirmed" | "cancelled" | "expired" | "rescheduled" | "completed" | "no_show";
+  deposit_status: "pending" | "paid" | "paid_offline" | "credit" | "transferred";
   price_minor: number;
   price_is_from: boolean;
   deposit_minor: number;
@@ -59,6 +61,33 @@ export type MyBooking = {
   cancellation_window_hours: number;
   policy_version: number;
   client_note: string | null;
+  /** Parte de la seña cubierta con saldo a favor (Mercado Pago cobra el resto). */
+  credit_applied_minor: number;
+  deposit_outcome: "applied" | "credited" | "forfeited" | "refunded" | "transferred" | null;
+  deposit_outcome_minor: number | null;
+  cancelled_by: "client" | "studio" | null;
+  cancel_reason: string | null;
+  rescheduled_to_code: string | null;
+  rescheduled_from_code: string | null;
+};
+
+/** Saldo a favor vigente de la clienta, por fecha de vencimiento. */
+export type MyCreditLot = {
+  remaining_minor: number;
+  original_minor: number;
+  currency: string;
+  expires_at: string;
+  kind: string;
+  appointment_code: string | null;
+};
+
+export type MyCreditMovement = {
+  created_at: string;
+  kind: string;
+  amount_minor: number;
+  currency: string;
+  expires_at: string | null;
+  appointment_code: string | null;
 };
 
 function check<T>(r: { data: T | null; error: { message: string } | null }, what: string): T {
@@ -100,6 +129,24 @@ export async function previewBooking(slug: string, serviceId: string, pro: strin
 export async function myBookings(slug: string): Promise<MyBooking[]> {
   const supabase = await serverSupabase();
   return (check(await supabase.rpc("my_bookings", { p_slug: slug }), "No se pudieron cargar tus turnos") ?? []) as MyBooking[];
+}
+
+/** Lo que permite la reserva y qué pasa con la seña si se cancela o cambia (lo decide la base). */
+export async function myBookingTerms(slug: string, code: string): Promise<BookingTerms | null> {
+  const supabase = await serverSupabase();
+  const { data, error } = await supabase.rpc("get_my_booking_terms", { p_slug: slug, p_code: code });
+  if (error) return null;
+  return ((data ?? []) as BookingTerms[])[0] ?? null;
+}
+
+export async function myCredit(slug: string): Promise<MyCreditLot[]> {
+  const supabase = await serverSupabase();
+  return (check(await supabase.rpc("my_credit", { p_slug: slug }), "No se pudo cargar tu saldo") ?? []) as MyCreditLot[];
+}
+
+export async function myCreditMovements(slug: string): Promise<MyCreditMovement[]> {
+  const supabase = await serverSupabase();
+  return (check(await supabase.rpc("my_credit_movements", { p_slug: slug }), "No se pudieron cargar los movimientos") ?? []) as MyCreditMovement[];
 }
 
 export async function myPhone(slug: string): Promise<string> {

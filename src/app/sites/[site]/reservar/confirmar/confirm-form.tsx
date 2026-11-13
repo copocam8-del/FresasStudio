@@ -12,6 +12,7 @@ export function ConfirmForm({
   policyVersion,
   phone,
   depositLabel,
+  coveredByCredit = false,
 }: {
   serviceId: string;
   pro: string;
@@ -19,6 +20,7 @@ export function ConfirmForm({
   policyVersion: number;
   phone: string;
   depositLabel: string;
+  coveredByCredit?: boolean;
 }) {
   const [state, action] = useActionState<BookingState, FormData>(createBookingAction, undefined);
   return (
@@ -39,7 +41,9 @@ export function ConfirmForm({
         Leí y acepto la política del estudio.
       </label>
       <FormMessage state={state} />
-      <SubmitButton pendingText="Reservando…">Reservar y pagar seña ({depositLabel})</SubmitButton>
+      <SubmitButton pendingText="Reservando…">
+        {coveredByCredit ? "Reservar con mi saldo a favor" : `Reservar y pagar seña (${depositLabel})`}
+      </SubmitButton>
     </form>
   );
 }

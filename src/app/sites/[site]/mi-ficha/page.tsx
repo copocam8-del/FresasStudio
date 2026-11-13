@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { MyBookings } from "@/components/site/my-bookings";
+import { MyCredit } from "@/components/site/my-credit";
 import { Button } from "@/components/ui/button";
 import { getUser } from "@/lib/auth";
 import { getStudio } from "@/lib/studio";
@@ -58,6 +59,7 @@ export default async function MyProfilePage({ params }: PageProps<"/sites/[site]
       description={profile.email ? <>Ingresaste con {profile.email}.</> : undefined}
     >
       <ProfileForm fullName={profile.full_name} phone={profile.phone ?? ""} />
+      <MyCredit slug={studio.slug} />
       <MyBookings slug={studio.slug} />
       {signOut}
     </AuthShell>

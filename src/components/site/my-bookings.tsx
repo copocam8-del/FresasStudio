@@ -7,6 +7,9 @@ const STATUS: Record<string, string> = {
   confirmed: "Confirmado",
   cancelled: "Cancelado",
   expired: "Vencido",
+  rescheduled: "Cambiado de día",
+  completed: "Atendido",
+  no_show: "No asististe",
 };
 
 /** "Mis turnos" de la clienta en este estudio (próximos primero). */
@@ -23,8 +26,11 @@ export async function MyBookings({ slug }: { slug: string }) {
             <span className="font-medium text-foreground">{b.service_name} · {b.professional_name}</span>
             <span className="text-sm text-muted-foreground">{formatDateTimeLong(b.starts_at, ctx.timezone)}</span>
             <span className="text-sm text-muted-foreground">
-              {STATUS[b.status]} · código {b.code}
+              {STATUS[b.status]}{b.cancelled_by === "studio" ? " por el estudio" : ""} · código {b.code}
             </span>
+            {b.cancelled_by === "studio" && b.cancel_reason && (
+              <span className="text-sm text-foreground">Motivo: {b.cancel_reason}</span>
+            )}
           </Link>
         </li>
       ))}

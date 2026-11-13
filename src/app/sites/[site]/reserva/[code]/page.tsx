@@ -6,7 +6,8 @@ import { PayDepositButton, PaymentWatcher } from "@/components/site/payment";
 import { BookingShell } from "@/components/site/booking-shell";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { getUser } from "@/lib/auth";
-import { getBookingContext, myBookings } from "@/lib/booking-data";
+import { getBookingContext, myBookingTerms, myBookings } from "@/lib/booking-data";
+import { CLIENT_STATUS, closedExplanation, deadlineNotice } from "@/lib/booking-terms";
 import { formatDateTimeLong, formatTime, timezoneLabel } from "@/lib/booking-format";
 import { formatMoney } from "@/lib/money";
 import { paymentsConfig } from "@/lib/payments/config";
@@ -17,12 +18,7 @@ import { payDepositAction, releaseBookingAction, simulatePaymentAction } from ".
 
 export const metadata: Metadata = { title: "Tu reserva", robots: { index: false } };
 
-const STATUS: Record<string, string> = {
-  pending_payment: "Esperando el pago de la seña",
-  confirmed: "Confirmada",
-  cancelled: "Cancelada",
-  expired: "Venció sin pago",
-};
+const STATUS = CLIENT_STATUS;
 
 type MyPayment = {
   status: string;
@@ -38,6 +34,8 @@ const REFUND_WHY: Record<string, string> = {
   late_released: "Tu pago llegó después de que se liberó la reserva.",
   late_past: "Tu pago llegó cuando el horario del turno ya había pasado.",
   duplicate: "La seña ya estaba pagada y recibimos un pago de más.",
+  studio_cancelled: "El estudio canceló el turno y te devuelve la seña.",
+  late_credit_spent: "Tu pago llegó cuando la reserva ya había vencido y el saldo a favor que usaba ya se había usado en otra.",
 };
 
 export default async function BookingPage({ params, searchParams }: PageProps<"/sites/[site]/reserva/[code]">) {
@@ -54,6 +52,10 @@ export default async function BookingPage({ params, searchParams }: PageProps<"/
 
   const tz = ctx.timezone;
   const pending = b.status === "pending_payment";
+  const confirmed = b.status === "confirmed";
+  const terms = confirmed ? await myBookingTerms(studio.slug, b.code) : null;
+  const due = b.deposit_minor - b.credit_applied_minor;
+  const explanation = closedExplanation(b);
   const devPayments = process.env.NEXT_PUBLIC_ENABLE_SIMULATED_PAYMENTS === "true";
   const onlinePayments = Boolean(paymentsConfig());
   // Volver de Mercado Pago no confirma nada: solo muestra "verificando" mientras la base
@@ -67,7 +69,7 @@ export default async function BookingPage({ params, searchParams }: PageProps<"/
   const refund = payment && payment.refund_status ? payment : null;
 
   return (
-    <BookingShell studio={studio} step={4} title={pending ? "¡Te guardamos el horario!" : `Reserva ${STATUS[b.status].toLowerCase()}`}>
+    <BookingShell studio={studio} step={4} title={pending ? "¡Te guardamos el horario!" : `Turno ${STATUS[b.status].toLowerCase()}`}>
       <section aria-label="Tu reserva" className="flex flex-col gap-3 glass rounded-[1.1rem] p-5 text-card-foreground">
         <p className="text-sm text-muted-foreground">
           Código <span className="font-mono text-base font-semibold text-card-foreground">{b.code}</span>
@@ -89,7 +91,18 @@ export default async function BookingPage({ params, searchParams }: PageProps<"/
             {formatMoney(b.deposit_minor, b.currency)}
             {b.deposit_status !== "pending" ? " · pagada" : ""}
           </dd>
+          {b.credit_applied_minor > 0 && (
+            <>
+              <dt className="text-muted-foreground">Cubierto con tu saldo a favor</dt>
+              <dd className="text-right text-muted-foreground">{formatMoney(b.credit_applied_minor, b.currency)}</dd>
+            </>
+          )}
         </dl>
+        {b.rescheduled_from_code && (
+          <p className="text-sm text-muted-foreground">
+            Este turno reemplaza al <Link href={`/reserva/${b.rescheduled_from_code}`} className="underline underline-offset-4">{b.rescheduled_from_code}</Link>.
+          </p>
+        )}
       </section>
 
       {pending && b.hold_expires_at && (
@@ -109,7 +122,7 @@ export default async function BookingPage({ params, searchParams }: PageProps<"/
             <PayDepositButton
               code={b.code}
               action={payDepositAction}
-              label={`${returned && !rejectedOnReturn ? "Volver a Mercado Pago" : "Pagar seña"} ${formatMoney(b.deposit_minor, b.currency)} con Mercado Pago`}
+              label={`${returned && !rejectedOnReturn ? "Volver a Mercado Pago" : "Pagar seña"} ${formatMoney(due, b.currency)} con Mercado Pago`}
             />
           ) : (
             <p className="text-sm text-muted-foreground">
@@ -147,10 +160,34 @@ export default async function BookingPage({ params, searchParams }: PageProps<"/
         </section>
       )}
 
-      {b.status === "confirmed" && (
-        <p className="text-sm text-muted-foreground">
-          Si necesitás cancelar o reprogramar, hacelo con {b.cancellation_window_hours} horas o más de anticipación para conservar la seña.
-        </p>
+      {explanation && (
+        <section aria-label="Qué pasó con tu turno" className="glass flex flex-col gap-2 rounded-[1.1rem] p-5 text-card-foreground">
+          <p>{explanation}</p>
+          {b.rescheduled_to_code && (
+            <Link href={`/reserva/${b.rescheduled_to_code}`} className={buttonVariants({ variant: "outline", className: "h-11" })}>
+              Ver el turno nuevo
+            </Link>
+          )}
+        </section>
+      )}
+
+      {confirmed && terms && terms.can_cancel && (
+        <section aria-labelledby="cambios" className="glass flex flex-col gap-3 rounded-[1.1rem] p-5 text-card-foreground">
+          <h2 id="cambios" className="font-semibold">Cambios y cancelación</h2>
+          <p className="text-sm">{deadlineNotice(terms, tz)} ({timezoneLabel(tz)})</p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {terms.can_reschedule_online ? (
+              <Link href={`/reserva/${b.code}/cambiar`} className={buttonVariants({ className: "h-11 flex-1" })}>
+                Cambiar día u horario
+              </Link>
+            ) : (
+              <p className="flex-1 text-sm text-muted-foreground">Este turno ya se cambió una vez: para cambiarlo de nuevo, escribile al estudio.</p>
+            )}
+            <Link href={`/reserva/${b.code}/cancelar`} className={buttonVariants({ variant: "outline", className: "h-11 flex-1" })}>
+              Cancelar turno
+            </Link>
+          </div>
+        </section>
       )}
 
       <div className="flex flex-col gap-2 sm:flex-row">
