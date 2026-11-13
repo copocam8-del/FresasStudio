@@ -4,8 +4,11 @@ import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 
 export const PASS = "CleoDev-2026";
-export const F = "fresas.localhost:3000";
-export const E = "estudio-prueba.localhost:3000";
+// Puerto del dominio raíz con el que se compiló la app (NEXT_PUBLIC_ROOT_DOMAIN); E2E_PORT es
+// el puerto donde escucha. Normalmente los dos son 3000.
+const ROOT_PORT = process.env.E2E_ROOT_PORT ?? "3000";
+export const F = `fresas.localhost:${ROOT_PORT}`;
+export const E = `estudio-prueba.localhost:${ROOT_PORT}`;
 export const FRESAS_ID = "10000000-0000-4000-a000-000000000001";
 
 let fails = 0;

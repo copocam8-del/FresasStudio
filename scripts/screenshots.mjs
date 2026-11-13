@@ -19,6 +19,9 @@ const browserPath = BROWSERS.find((p) => existsSync(p));
 if (!browserPath) { console.error("No encontré Chrome ni Edge."); process.exit(1); }
 
 const OUT = "docs/diseno/capturas";
+// Puerto de la app (si el 3000 está ocupado: compilar con NEXT_PUBLIC_ROOT_DOMAIN=localhost:<puerto>).
+const PORT = process.env.SHOT_PORT ?? "3000";
+const HOST = `fresas.localhost:${PORT}`;
 mkdirSync(OUT, { recursive: true });
 
 const ALL_SHOTS = [
@@ -34,9 +37,13 @@ const SEMI = "31000000-0000-4000-a000-000000000001";
 const sbClient = await supabaseAs("clienta02@e2e.test");
 const myCode = ((await sbClient.rpc("my_bookings", { p_slug: "fresas" })).data ?? []).find((b) => b.status === "confirmed")?.code;
 const OWNER = "duena@fresasstudio.test";
+const sbOwner = await supabaseAs(OWNER);
+const fichaId = (await sbOwner.from("client_profiles").select("id").eq("email", "clienta08@e2e.test").maybeSingle()).data?.id;
+const turnoId = (await sbOwner.from("appointments").select("id").eq("status", "confirmed")
+  .gt("starts_at", new Date().toISOString()).order("starts_at").limit(1).maybeSingle()).data?.id;
 const C = "clienta02@e2e.test";
-const m = (name, path, as, extra = {}) => ({ name: `p-${name}`, url: `http://${F}${path}`, width: 390, height: 844, full: true, scale: 2, as, ...extra });
-const d = (name, path, as, extra = {}) => ({ name: `p-${name}`, url: `http://${F}${path}`, width: 1440, height: 900, full: true, scale: 1, as, ...extra });
+const m = (name, path, as, extra = {}) => ({ name: `p-${name}`, url: `http://${HOST}${path}`, width: 390, height: 844, full: true, scale: 2, as, ...extra });
+const d = (name, path, as, extra = {}) => ({ name: `p-${name}`, url: `http://${HOST}${path}`, width: 1440, height: 900, full: true, scale: 1, as, ...extra });
 ALL_SHOTS.push(
   m("01-cel-inicio-clienta", "/", C, { clientLogin: true }),
   m("02-cel-reservar-servicio", "/reservar", C, { clientLogin: true }),
@@ -56,8 +63,20 @@ ALL_SHOTS.push(
   d("18-esc-panel-pagos", "/admin/pagos/movimientos", OWNER),
   d("19-esc-panel-marca", "/admin/marca", OWNER),
   d("20-esc-panel-login", "/admin/login", null),
-  { name: "p-21-esc-cleo", url: "http://localhost:3000/", width: 1440, height: 900, full: false, scale: 1, as: null },
-  { name: "p-22-esc-cleo-admin", url: "http://admin.localhost:3000/login", width: 1440, height: 900, full: false, scale: 1, as: null },
+  m("30-cel-agenda-dia", "/admin/agenda", OWNER),
+  m("31-cel-agenda-semana", "/admin/agenda?vista=semana", OWNER),
+  d("32-esc-agenda-dia", "/admin/agenda", OWNER),
+  d("33-esc-agenda-semana", "/admin/agenda?vista=semana", OWNER),
+  m("34-cel-clientas", "/admin/clientas", OWNER),
+  d("35-esc-clientas", "/admin/clientas", OWNER),
+  ...(fichaId ? [d("36-esc-ficha", `/admin/clientas/${fichaId}`, OWNER), m("37-cel-ficha", `/admin/clientas/${fichaId}`, OWNER)] : []),
+  d("38-esc-asistencia", "/admin/asistencia", OWNER),
+  ...(turnoId ? [m("39-cel-detalle-turno", `/admin/turnos/${turnoId}`, OWNER)] : []),
+  ...(myCode ? [m("40-cel-cancelar", `/reserva/${myCode}/cancelar`, C, { clientLogin: true }),
+                m("41-cel-cambiar", `/reserva/${myCode}/cambiar`, C, { clientLogin: true })] : []),
+  m("42-cel-agenda-profesional", "/admin/agenda", "profesional@fresasstudio.test"),
+  { name: "p-21-esc-cleo", url: `http://localhost:${PORT}/`, width: 1440, height: 900, full: false, scale: 1, as: null },
+  { name: "p-22-esc-cleo-admin", url: `http://admin.localhost:${PORT}/login`, width: 1440, height: 900, full: false, scale: 1, as: null },
 );
 
 // node scripts/screenshots.mjs [prefijo]  → solo las capturas cuyo nombre empieza así

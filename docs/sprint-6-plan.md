@@ -1,7 +1,22 @@
 # Sprint 6 — Plan: cancelaciones, agenda, ficha de clienta y asistencia (Épicas 07–10)
 
-> Estado: **aprobado** (todas las decisiones, con C10 cambiada: el saldo vence, ver abajo).
-> En implementación, paso a paso (§9).
+> Estado: **implementado** (pasos 0 a 9), migraciones aplicadas en desarrollo, tests de base,
+> unitarios y e2e en verde. Pendiente: el checklist manual del README.
+>
+> **Cambios de implementación respecto del plan:**
+> - **C10 (decidido):** el saldo vence (90 días, configurable de 30 a 365 en «Reglas de reservas»),
+>   por lotes; se usa primero lo que vence antes.
+> - **El saldo no se usa si la seña ya se cobró en el estudio** (turno manual o reprogramación del
+>   panel con «ya la pagó»): se encontró con el e2e (migración 2760).
+> - **Un turno atendido sigue ocupando su horario** (migración 2770): «Terminó» se puede marcar
+>   antes de la hora de fin y el turno quedaba libre para otra reserva. Una falta sí libera el
+>   horario; corregir una falta cuyo hueco ya se usó se rechaza.
+> - Si la política del estudio no hace perder la seña por falta (`no_show_forfeits_deposit`), la
+>   seña pasa al saldo (lote «por falta»).
+> - Las pastillas nuevas usan los cuatro tonos del tema ya controlados por `theme.test.ts`
+>   (Atendida = verde, Llegó/En curso = champagne, Faltó = rojo, Reprogramado/Sin cerrar = neutro).
+> - Los indicadores cuentan solo turnos que ya pasaron (también las cancelaciones tardías).
+> - «Bloquear» desde la agenda abre Bloqueos con el día y la profesional, y avisa si ya hay turnos.
 
 Backlog:
 - **Épica 07 (POL-01 a POL-08):** anticipación en la zona del estudio, cancelación y

@@ -15,7 +15,9 @@ sitio público de cada estudio, Cleo Manager (panel del estudio) y Cleo Admin
 - Supabase: PostgreSQL + Auth + Storage. Migraciones en `supabase/migrations/`.
 - Mercado Pago (OAuth por estudio), Resend, Render (ver "Infraestructura").
 - Comandos: `npm run dev`, `npm run build`, `npm run lint`, `npm test` (Vitest),
-  `./scripts/test-db.sh` (tests de BD) y `npm run e2e` (contra `next start` y Supabase de desarrollo).
+  `./scripts/test-db.sh` (tests de BD; `ONLY="21 22"` para algunos archivos, `ONLY=race` para la
+  concurrencia) y `npm run e2e` (contra `next start` y Supabase de desarrollo; `E2E_PORT` si la app
+  escucha en otro puerto).
 
 ## Infraestructura
 
@@ -138,6 +140,25 @@ El frontend **muestra** importes y consecuencias; el servidor/base **decide**.
   puede crear simulaciones de pago (`no-fake-payments.test.ts`); la de desarrollo vive en el seed.
 - Fechas y horas siempre en la zona del estudio (`src/lib/booking-format.ts`).
 - Cambios en reservas: correr también el test de concurrencia (`./scripts/test-db.sh` lo incluye).
+- Ocupan horario (restricción `appointments_no_overlap` y disponibilidad): esperando pago,
+  confirmado y **atendido**. Una falta libera el horario.
+
+## Regla 4b — Cancelaciones, saldo a favor y asistencia (Sprint 6)
+
+- La regla de la seña sale SOLO de `app.deposit_terms(reserva, momento)`: plazo en el reloj del
+  estudio con la ventana guardada en la reserva. Nunca calcularla en la pantalla.
+- Toda acción con consecuencias de seña (cancelar, reprogramar) recibe la consecuencia que mostró
+  la pantalla (`p_expected`) y la base la recalcula: si no coincide, no hace nada.
+- Si cancela el estudio, la clienta nunca pierde la seña (saldo o devolución). En el panel siempre
+  se pregunta quién cancela.
+- Saldo a favor: `client_credit_entries` es de solo agregado y por lotes que vencen; se escribe
+  solo con las funciones `app.*_credit*` (bloqueando la ficha de la clienta). Se usa solo en la
+  seña de una reserva que queda por pagar; nunca si la seña se cobró en el estudio.
+- El resultado de la seña (`deposit_outcome`) se fija una sola vez al cerrar el turno.
+- Faltas: solo `agenda.manage`; la profesional marca llegó/empezó/terminó en sus turnos
+  (`agenda.mark_own`) y ve solo sus clientas (`clients.read_own`, sin pagos ni saldo).
+- Notas internas (`client_notes`): la clienta nunca las ve; no se editan ni borran (se ocultan).
+  Alergias: dato de salud, la auditoría guarda solo qué campo cambió.
 
 ## Regla 5 — Mercado Pago
 

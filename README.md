@@ -23,6 +23,11 @@ colores, con el logo de Cleo chiquito.
   oscuro de Cleo calcado de las referencias (`docs/diseno/`), logo de Cleo en SVG, marca Cleo por
   defecto y marca propia opcional, bienvenida animada y todas las pantallas rediseñadas.
   Capturas: `docs/diseno/capturas/`.
+- Sprint 6 ([plan](docs/sprint-6-plan.md)): cancelaciones y reprogramaciones con la regla de 24 h
+  (hora del estudio, política aceptada), saldo a favor con libro de solo agregado y vencimiento
+  (90 días, configurable), cancelación del estudio sin perjuicio para la clienta, faltas, agenda
+  día/semana con acciones de un toque, fichas de clientas (notas internas, alergias) e
+  indicadores de asistencia.
 
 Hosting: **Render** (Web Service). Ver "Infraestructura" en `CLAUDE.md`.
 
@@ -39,7 +44,9 @@ src/
       reservar/ reserva/[código]           reserva online (pasos 1–4) y estado de la reserva
       ingresar/ auth/callback/ mi-ficha/   clientas: Google, sus datos y "Mis turnos"
       admin/                   panel del estudio: login, recuperar, restablecer, invitación,
-                               inicio, turnos (+ manual), servicios (+ categorías),
+                               inicio, agenda (día/semana), turnos (+ manual, detalle con
+                               asistencia, cancelar y reprogramar), clientas (fichas, notas,
+                               preferencias, saldo), asistencia, servicios (+ categorías),
                                profesionales, horarios, bloqueos, equipo, reglas de reservas,
                                marca (colores y logo), Mercado Pago (conectar, pagos recibidos)
     api/pagos/                 Mercado Pago, en cualquier host: vuelta de OAuth, webhook, tareas internas
@@ -74,20 +81,32 @@ supabase/
     20261110002400_payments.sql        links de pago, pagos, eventos, avisos, devoluciones, pago tardío
     20261110002500_payments_cron.sql   revisión de pagos cada 10 min y tareas diarias (pg_cron + pg_net)
     20261110002600_brand_dark_theme.sql  marca propia opcional (brand.enabled) y validación para tema oscuro
+    20261110002700_sprint6_enums.sql   estados nuevos: reprogramado, atendido, faltó; seña con saldo o transferida
+    20261110002710_deposit_terms.sql   la regla de la seña: plazo en la hora del estudio (app.deposit_terms)
+    20261110002720_credits_and_cancellation.sql  saldo a favor (lotes que vencen), cancelar (clienta/estudio), uso del saldo
+    20261110002730_reschedule.sql      reprogramar (clienta una vez, panel sin límite)
+    20261110002740_attendance.sql      llegó / empezó / terminó / faltó y corrección de faltas
+    20261110002750_clients_agenda.sql  notas, preferencias, clients.read_own, directorio, agenda e indicadores
+    20261110002760_manual_paid_keeps_credit.sql  la seña cobrada en el estudio no consume saldo
+    20261110002770_completed_keeps_slot.sql      un turno atendido sigue ocupando su horario
   seed.sql                             SOLO desarrollo: Fresas Studio + Estudio Prueba (idempotente)
 db/
   local/00_supabase_shim.sql           SOLO local: imita auth, roles y Storage de Supabase
   tests/lib/setup.sql, finish.sql      framework común (transacción, asserts, atajos de sesión)
-  tests/01…19_*.sql                    aislamiento, renombre, seed, dominios, equipo, fichas, marca,
+  tests/01…25_*.sql                    aislamiento, renombre, seed, dominios, equipo, fichas, marca,
                                        catálogo, horarios, catálogo público, RPC de horarios, reglas
                                        de reservas, reservas, disponibilidad, reserva online, panel
-                                       y vista previa, cuentas de Mercado Pago y pagos
+                                       y vista previa, cuentas de Mercado Pago, pagos y Sprint 6
+                                       (regla de 24 h, cancelación, saldo, reprogramar, asistencia,
+                                       fichas, agenda e indicadores)
   tests/concurrency/booking_race.sh    20 clientas a la vez por el mismo horario (base comprometida)
   tests/concurrency/payment_race.sh    20 avisos del mismo pago / 20 pagos de la misma reserva a la vez
+  tests/concurrency/credit_race.sh     20 reservas con el mismo saldo; ajustes y reservas; cancelar vs. falta
 scripts/
   test-db.sh                           levanta Postgres temporal, migra, siembra y testea (Linux y Windows)
   e2e-auth.mjs, e2e-catalog.mjs,       pruebas de punta a punta contra la app y Supabase de desarrollo
   e2e-booking.mjs                      (incluye 10 envíos simultáneos al mismo horario)
+  e2e-agenda.mjs                       Sprint 6: cancelar, saldo, cambiar día, agenda, asistencia, fichas
   e2e-payments.mjs, fake-mercadopago.mjs  Mercado Pago de punta a punta con un Mercado Pago simulado
   screenshots.mjs                      capturas de las pantallas (Chrome/Edge sin ventana)
   e2e-lib.mjs                          helpers compartidos de los e2e
@@ -140,10 +159,12 @@ producción no existe.
 npm test              # unitarios (Vitest): host, validación, contraste del tema y de marcas, contacto
 npm run lint
 ./scripts/test-db.sh  # base de datos: un resumen por archivo («38 tests · 38 ok · 0 fallidos»)
+ONLY="21 22" ./scripts/test-db.sh   # solo esos archivos; ONLY=race: solo la concurrencia
 
 # De punta a punta, contra la app compilada y el Supabase de DESARROLLO:
 npm run build && npx next start -p 3000   # en otra terminal
-npm run e2e           # e2e-auth.mjs, e2e-catalog.mjs y e2e-booking.mjs
+npm run e2e           # e2e-auth, e2e-catalog, e2e-booking y e2e-agenda
+# Si el puerto 3000 está ocupado: npx next start -p 3100 y E2E_PORT=3100 npm run e2e
 
 # Mercado Pago de punta a punta (levanta su propio next start con un Mercado Pago simulado
 # en localhost:4010; necesita npm run build, el puerto 3000 libre y SUPABASE_SECRET_KEY de
@@ -268,6 +289,24 @@ La pantalla de consentimiento de Google es una sola para todos los estudios y di
 Para producción, agregar en el mismo cliente el URI del proyecto de producción.
 
 ## Checklist manual (lo que el e2e no cubre)
+
+**Sprint 6 — cancelaciones, saldo, agenda y fichas (celular real o 375 px):**
+- [ ] Como clienta, en un turno confirmado a más de 24 h: «Cancelar turno» → dice «Conservás la
+      seña» → confirmar → «Mis datos» muestra el saldo y «hasta el …».
+- [ ] Reservar otro turno: el resumen dice «Usás $ X de tu saldo» y, si lo cubre, queda confirmado
+      sin pasar por Mercado Pago.
+- [ ] «Cambiar día u horario» en un turno a más de 24 h: Antes/Ahora, la seña pasa entera; después
+      el sitio ya no ofrece otro cambio.
+- [ ] Un turno a menos de 24 h: cancelar y cambiar avisan que la seña se pierde (cambiar pide seña nueva).
+- [ ] Como recepción/dueña, en el detalle de un turno: cancelar «por la clienta» (regla de 24 h) y
+      «por el estudio» (motivo, saldo o devolución); la clienta ve el motivo en «Mis turnos».
+- [ ] Agenda en el celular durante un día de prueba: Llegó → Empezó → Terminó, y Faltó (pide
+      confirmar). Ver el aviso de turnos «sin cerrar» al día siguiente.
+- [ ] Agenda en escritorio: una columna por profesional, vista semana, filtro por profesional.
+- [ ] Como profesional: ve solo su agenda y sus clientas, marca sus turnos y no puede marcar faltas.
+- [ ] Ficha: nota interna, alergias (aparecen destacadas en el turno), «Avisar por WhatsApp».
+- [ ] «Reglas de reservas»: cambiar el vencimiento del saldo (30 a 365 días).
+- [ ] Bloquear un día desde la agenda que ya tiene turnos: avisa antes de guardar.
 
 **Sprint 5 — Mercado Pago con cuentas de prueba (ver [plan §13](docs/sprint-5-plan.md)):**
 - [ ] Como dueña, en «Mercado Pago», conectar la cuenta **vendedora de prueba**: vuelve con
@@ -414,6 +453,26 @@ Para producción, agregar en el mismo cliente el URI del proyecto de producción
 - El registro de pagos y su historial (solo agregado) lo ven quienes tienen caja o la agenda
   completa. La profesional, la clienta (salvo el resultado de su reserva) y Cleo Admin, no.
 
+**Cancelaciones, saldo a favor y asistencia (Sprint 6)**
+- La regla de la seña la calcula una sola función (`app.deposit_terms`): el plazo es la misma hora
+  N horas antes en el reloj del estudio, con la ventana de la política aceptada en la reserva. A
+  exactamente 24:00:00 conserva; un segundo después, pierde (probado al microsegundo).
+- La pantalla manda la consecuencia que mostró; si cambió mientras la clienta miraba, la base no
+  hace nada y avisa.
+- Cancela la clienta (sitio o panel) con 24 h o más → saldo a favor; con menos → se pierde.
+  Cancela el estudio → saldo o devolución (Mercado Pago automática o en el estudio), nunca pierde.
+- Reprogramar a tiempo mueve el mismo turno (mismo precio, seña transferida); tarde, seña nueva.
+  Desde el sitio, una vez; desde el panel, sin límite.
+- Saldo a favor: libro de solo agregado por lotes que vencen (90 días por defecto); se usa primero
+  lo que vence antes, solo en la seña de la próxima reserva (nunca si la seña se cobró en el
+  estudio) y vuelve si esa reserva vence o se libera. Dos reservas a la vez no gastan el mismo
+  saldo (test de concurrencia). Ajustes manuales solo dueña y encargada, con motivo.
+- Asistencia: un solo resultado por turno (atendida o faltó). La falta la marca solo quien tiene
+  agenda.manage, desde la hora del turno; se corrige una vez en 7 días. Un turno atendido sigue
+  ocupando su horario; una falta lo libera.
+- La profesional ve solo sus turnos y sus clientas (sin pagos ni saldo). Las notas internas no las
+  ve la clienta y no se editan ni borran; la auditoría de alergias no guarda valores.
+
 **Auditoría**
 - Se registra quién hizo cada cambio en estudios, configuración, roles, membresías,
   invitaciones, dominios, fichas, servicios, profesionales, horarios y bloqueos. Las reservas
@@ -445,8 +504,6 @@ Para producción, agregar en el mismo cliente el URI del proyecto de producción
   verificación DNS, el alta en Render y las pantallas de Cleo Admin.
 - **Pantallas de Cleo Admin** (estudios, planes, módulos) y **límites por plan (SAAS-04)**.
 - **Backups y monitoreo (ARC-09):** se configuran en Supabase (PITR) y Render.
-- **Rol Profesional:** hoy tiene `clients.read` y ve todas las clientas del estudio; con la
-  agenda conviene limitarlo a sus propias clientas.
 - **Antes del lanzamiento — prueba con el Mercado Pago real (sandbox):** hasta ahora los pagos
   se probaron de punta a punta contra un Mercado Pago **simulado** (`npm run e2e:pagos`). Falta
   la prueba con Mercado Pago de verdad, con cuentas de prueba:
@@ -465,9 +522,13 @@ Para producción, agregar en el mismo cliente el URI del proyecto de producción
 - **Mercado Pago en producción:** credenciales de producción de la aplicación (pide datos del
   negocio), URL de vuelta y de webhooks con `cleo.com.ar`, variables en Render y secretos del
   Vault (ver "Mercado Pago (por entorno)").
-- **Cobro del saldo y caja** (PAY-07, Épica 09): el registro de pagos ya queda listo para la caja.
-- **Cancelar y reprogramar con seña** (ventana de 24 h, crédito o pérdida): Épica 07.
-- **Agenda visual** por día y semana: Épica 08. Al bloquear un día que ya tiene turnos, avisar.
+- **Cobro del saldo y caja** (Épica 11): el registro de pagos y el resultado de cada seña
+  (`deposit_outcome`) quedan listos para la caja. Usar el saldo a favor para pagar el resto del
+  turno en el estudio llega con la caja.
+- **Avisos automáticos** a la clienta (cancelación del estudio, saldo por vencer): hoy se ven en
+  «Mis turnos» y el panel tiene «Avisar por WhatsApp». Falta Resend/WhatsApp.
+- **Reglas por faltas repetidas** (ATT-06, por ejemplo pedir 100% de seña): hoy solo se muestran.
+- **Fotos de la clienta y exportación** (CRM-05, CRM-06).
 - **Estudio Prueba** sigue con ventana de 48 h: la migración cambió el valor por defecto y
   Fresas; los estudios existentes conservan su configuración.
 
