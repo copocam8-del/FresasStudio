@@ -5,10 +5,10 @@
 > con la marca propia activada en «Marca» se ven el nombre, el logo y los colores del estudio, con el
 > logo de Cleo chiquito (reemplaza D1/D2). Títulos en sans liviana y el nombre/logo en serif, como en
 > las referencias. Lista de diferencias y rondas de corrección en `docs/diseno/diferencias.md`. El
-> logo de Cleo está redibujado en SVG a partir de las referencias (falta el archivo original).
+> logo de Cleo es el original (`docs/diseno/logo.jpeg`) vectorizado a SVG: `docs/diseno/logo-cleo.svg`.
 
-Referencias: `docs/diseno/ref-*.png` (7 imágenes). **Falta el logo de Cleo** (`logo-cleo`, ideal SVG
-o PNG transparente): mientras no esté, se usa un logotipo de texto provisorio "Cleo" en la serif.
+Referencias: `docs/diseno/ref-*.png` (7 imágenes) y el logo original `docs/diseno/logo.jpeg`
+(vectorizado en `docs/diseno/logo-cleo.svg`, fondo transparente).
 
 **Objetivo:** que la app se vea como las referencias (negro cálido, champagne, seda, vidrio) sin
 cambiar nada de lo que hace: mismos datos, mismas reglas, mismos permisos.

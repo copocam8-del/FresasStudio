@@ -66,7 +66,8 @@ sitio público de cada estudio, Cleo Manager (panel del estudio) y Cleo Admin
   `docs/diseno/ref-*.png` (ver `docs/diseno-plan.md` y `docs/diseno/diferencias.md`). Tokens en
   `src/app/globals.css`; los colores propios de un estudio se validan para fondo oscuro.
 - Componentes en `src/components/cleo/`: `GlassCard`, `StatCard` (con `Sparkline`), `StatusPill`,
-  `ActionTile`, `PageTitle`, `InitialsAvatar`, seda (`silk.tsx`), logo (`cleo-logo.tsx`), menú y barra
+  `ActionTile`, `PageTitle`, `InitialsAvatar`, seda (`silk.tsx`), logo (`cleo-logo.tsx`: el original
+  `docs/diseno/logo.jpeg` vectorizado; trazos en `cleo-logo-paths.ts`, no editar a mano), menú y barra
   inferior (`nav.tsx`), calendario del mes y bienvenida (`welcome.tsx`, ≤ 2 s, una vez por sesión).
 - Los degradados SVG compartidos se definen UNA vez (`svg-defs.tsx`): un id repetido dentro de un
   elemento oculto hace que no se pinte en ningún lado.

@@ -39,7 +39,7 @@ export async function BookingShell({
   const circle = "flex size-11 shrink-0 items-center justify-center rounded-full border border-[#4a4040] bg-[#1a1617]/85 backdrop-blur";
   return (
     <div className="relative isolate flex flex-1 flex-col overflow-x-clip">
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[300px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_72%,transparent)] opacity-80">
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[300px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_72%,transparent),linear-gradient(to_right,transparent_58%,black_80%)] [mask-composite:intersect] opacity-80">
         <SilkHero />
       </div>
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-5 px-[1.4rem] pt-7 pb-32">

@@ -91,8 +91,8 @@ export function SilkSidebar() {
           <stop offset="1" stopColor="#1a1412" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <path d="M0 0H122C82 46 40 104 0 178V0Z" fill="url(#s-top)" />
-      <path d="M122 0C82 46 40 104 0 178" stroke={EDGE} strokeOpacity=".8" strokeWidth="1.2" />
+      <path d="M0 0H64C42 26 22 58 0 96V0Z" fill="url(#s-top)" />
+      <path d="M64 0C42 26 22 58 0 96" stroke={EDGE} strokeOpacity=".8" strokeWidth="1.2" />
       <path d="M236 290C190 330 172 390 236 440Z" fill="url(#s-lens)" />
       <path d="M0 785C70 760 160 730 236 690V860H0Z" fill="url(#s-mid)" />
       <path d="M0 785C70 760 160 730 236 690" stroke={EDGE} strokeOpacity=".7" strokeWidth="1.3" />

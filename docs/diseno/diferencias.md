@@ -64,7 +64,7 @@ hacían que el emblema no se pintara en el menú. Ahora están definidos una sol
 
 **Diferencias que quedan a propósito:**
 - La barra de estado del teléfono (9:41, batería) es del celular, no de la página.
-- "Fresas Studio by Cleo" en lugar de "Cleo"; el emblema es provisorio hasta tener `logo-cleo`.
+- (Resuelto después) La marca por defecto es el logo de Cleo, vectorizado del original `logo.jpeg`.
 - Sin Tienda, Compras, Promociones, Pedidos, Productos, buscador ni campana (no existen todavía, D6–D7).
 - En el celular, en lugar del aviso "Todo en un solo lugar" va "Tu próximo turno" (dato real).
 - Las curvas de las tarjetas de números se dibujan solo con datos reales y con al menos 3 días con
